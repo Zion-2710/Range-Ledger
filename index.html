@@ -401,12 +401,15 @@ async function submitSignUp() {
   if (!name || !email || !password) { alert('Please fill in your name, email, and password.'); return; }
   if (password.length < 6) { alert('Password must be at least 6 characters.'); return; }
 
-  let phone = '', category = '', shooterCategory = '', specialization = '', academyName = '', academyAddress = '', laneReservation = 'false';
+  let phone = '', category = '', shooterCategory = '', coachName = '', nationalQualified = 'false', specialization = '', academyName = '', academyAddress = '', laneReservation = 'false';
   if (role === 'student') {
     phone = document.getElementById('suPhone').value.trim();
     category = document.getElementById('suWeapon').value;
+    coachName = document.getElementById('suCoachName').value.trim();
     shooterCategory = document.getElementById('suShooterCategory').value;
+    if (shooterCategory === 'ISSF') { nationalQualified = document.getElementById('suNationalQualified').value; }
     if (!phone) { alert('Please enter your mobile number.'); return; }
+    if (!coachName) { alert('Please enter your coach\'s name.'); return; }
   } else if (role === 'coach') {
     specialization = document.getElementById('suSpecialization').value;
     academyName = document.getElementById('suAcademyName').value.trim();
@@ -422,7 +425,7 @@ async function submitSignUp() {
   // there's no active session yet to run a normal insert with.
   const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
     email, password,
-    options: { data: { role, name, phone, category, shooter_category: shooterCategory, specialization, academy_name: academyName, academy_address: academyAddress, lane_reservation: laneReservation } },
+    options: { data: { role, name, phone, category, shooter_category: shooterCategory, coach_name: coachName, national_qualified: nationalQualified, specialization, academy_name: academyName, academy_address: academyAddress, lane_reservation: laneReservation } },
   });
   if (signUpErr) { setBusy(false); render(); alert('Sign up failed: ' + signUpErr.message); return; }
   const user = signUpData.user;
@@ -974,6 +977,7 @@ function screenSignIn() {
 }
 function screenSignUp() {
   const role = state.suRole || 'student';
+  const shooterCat = state.suShooterCategory || 'ISSF';
   return '<label class="field-label" style="margin-top:0">I am a…</label>' +
     '<select id="suRole" class="text-input" onchange="state.suRole=this.value;render()"><option value="student"' + (role === 'student' ? ' selected' : '') + '>Student</option><option value="coach"' + (role === 'coach' ? ' selected' : '') + '>Coach</option><option value="admin"' + (role === 'admin' ? ' selected' : '') + '>Admin</option></select>' +
     '<label class="field-label">Full name</label><input id="suName" class="text-input" placeholder="e.g. Rohan Mehta"/>' +
@@ -982,7 +986,15 @@ function screenSignUp() {
     (role === 'student' ? (
       '<label class="field-label">Mobile number</label><input id="suPhone" class="text-input" type="tel" placeholder="e.g. 98765 43210"/>' +
       '<label class="field-label">Weapon</label><select id="suWeapon" class="text-input"><option>Air Rifle 10m</option><option>Air Pistol 10m</option></select>' +
-      '<label class="field-label">Shooter category</label><select id="suShooterCategory" class="text-input"><option value="ISSF">ISSF shooter</option><option value="NR">NR (National Rules) shooter</option></select>' +
+      '<label class="field-label">Coach\'s name</label><input id="suCoachName" class="text-input" placeholder="e.g. Ranvijay Singh"/>' +
+      '<label class="field-label">Shooter category</label><select id="suShooterCategory" class="text-input" onchange="state.suShooterCategory=this.value;render()">' +
+        '<option value="ISSF"' + (shooterCat === 'ISSF' ? ' selected' : '') + '>ISSF shooter</option>' +
+        '<option value="NR"' + (shooterCat === 'NR' ? ' selected' : '') + '>NR (National Rules) shooter</option>' +
+      '</select>' +
+      (shooterCat === 'ISSF' ? (
+        '<label class="field-label">Have you qualified for Nationals?</label>' +
+        '<select id="suNationalQualified" class="text-input"><option value="false">Not yet</option><option value="true">Yes, I have</option></select>'
+      ) : '') +
       '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:4px">Your fee invoices will be sent here and saved to your account for download anytime.</div>' +
       '<label class="field-label">Passport size photo (max 1MB, optional)</label><input type="file" accept="image/*" class="text-input" onchange="handlePhotoSelect(event)"/>' +
       (state.photoError ? '<div style="color:var(--rust);font-size:11px;margin-top:6px">' + state.photoError + '</div>' : '')
@@ -1145,7 +1157,7 @@ function studentDetailModal() {
   return '<div class="modal-overlay" onclick="closeDetailIfOverlay(event)"><div class="modal-card" style="max-width:340px;text-align:left" onclick="event.stopPropagation()">' +
     '<button class="back-btn" onclick="closeAdminDetail()">' + icon('chevronLeft', 14) + ' Close</button>' +
     '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' + avatar(s, 46) + '<div><div class="detail-name" style="font-size:15px">' + s.name + '</div><div style="font-size:11px;color:var(--paper-dim)">' + s.category + ' · ' + s.batch + '</div></div></div>' +
-    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:10px;line-height:1.6">' + (s.phone ? '📱 ' + s.phone + '<br/>' : '') + (s.email ? '✉️ ' + s.email : '') + '</div>' +
+    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:10px;line-height:1.6">' + (s.phone ? '📱 ' + s.phone + '<br/>' : '') + (s.email ? '✉️ ' + s.email + '<br/>' : '') + (s.coach_name ? '🎯 Coach: ' + s.coach_name : '') + '</div>' +
     '<div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + stamp(s.fee_status) +
     (s.fee_status === 'CASH_PENDING' ? '<button class="chip chip-active" onclick="confirmCash(\'' + s.id + '\')">Confirm cash</button>' : '') +
     (s.shooter_category ? '<span class="chip" style="cursor:default">' + s.shooter_category + ' shooter</span>' : '') +
