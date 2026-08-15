@@ -1,0 +1,61 @@
+
+-- =============================================================================
+-- Capture the student's coach name and (for ISSF shooters) their own
+-- reported Nationals-qualification status at signup, and fix decimal
+-- precision on match scores.
+-- =============================================================================
+ 
+alter table students add column if not exists coach_name text;
+ 
+-- Match scores are only ever stored to one decimal place by the app
+-- (whole scoring or 10.9-per-shot decimal scoring). A bare `numeric` column
+-- has no fixed scale, which is where Supabase's Table Editor grid view can
+-- render inconsistently — pinning the scale makes it display reliably and
+-- matches how the app actually uses it.
+alter table match_scores alter column score type numeric(7,1);
+ 
+-- Redefine the signup trigger again (see migrations 20260101000001 and
+-- 20260101000002) to also capture coach_name for students, and to set
+-- national_qualified from their own signup answer instead of always
+-- defaulting to false.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_role text := new.raw_user_meta_data->>'role';
+begin
+  insert into public.profiles (id, role, name)
+  values (new.id, coalesce(v_role, 'student'), coalesce(new.raw_user_meta_data->>'name', ''))
+  on conflict (id) do nothing;
+ 
+  if v_role = 'student' then
+    insert into public.students (id, name, phone, email, category, shooter_category, coach_name, national_qualified)
+    values (
+      new.id,
+      coalesce(new.raw_user_meta_data->>'name', ''),
+      new.raw_user_meta_data->>'phone',
+      new.email,
+      coalesce(new.raw_user_meta_data->>'category', 'Air Rifle 10m'),
+      coalesce(new.raw_user_meta_data->>'shooter_category', 'ISSF'),
+      new.raw_user_meta_data->>'coach_name',
+      coalesce((new.raw_user_meta_data->>'national_qualified')::boolean, false)
+    )
+    on conflict (id) do nothing;
+  elsif v_role = 'coach' then
+    insert into public.coaches (id, name, specialization, academy_name, academy_address, lane_reservation)
+    values (
+      new.id,
+      coalesce(new.raw_user_meta_data->>'name', ''),
+      coalesce(new.raw_user_meta_data->>'specialization', 'Air Rifle 10m'),
+      new.raw_user_meta_data->>'academy_name',
+      new.raw_user_meta_data->>'academy_address',
+      coalesce((new.raw_user_meta_data->>'lane_reservation')::boolean, false)
+    )
+    on conflict (id) do nothing;
+  end if;
+ 
+  return new;
+end;
+$$;
