@@ -331,7 +331,8 @@ const state = {
   session: null,
   profile: null,       // { id, role, name }
   me: null,             // the students/coaches row for the signed-in user
-  cache: { students: [], coaches: [], reminders: [], invoices: [], attendanceRequests: [] },
+  cache: { students: [], coaches: [], reminders: [], invoices: [], attendanceRequests: [], inventory: [] },
+  issueFormItemId: null,
   scoresByStudent: {},  // studentId -> array of match_scores rows
   pendingPhotoFile: null,
   photoError: '',
@@ -400,7 +401,7 @@ async function submitSignUp() {
   if (!name || !email || !password) { alert('Please fill in your name, email, and password.'); return; }
   if (password.length < 6) { alert('Password must be at least 6 characters.'); return; }
 
-  let phone = '', category = '', shooterCategory = '', specialization = '';
+  let phone = '', category = '', shooterCategory = '', specialization = '', academyName = '', academyAddress = '', laneReservation = 'false';
   if (role === 'student') {
     phone = document.getElementById('suPhone').value.trim();
     category = document.getElementById('suWeapon').value;
@@ -408,6 +409,10 @@ async function submitSignUp() {
     if (!phone) { alert('Please enter your mobile number.'); return; }
   } else if (role === 'coach') {
     specialization = document.getElementById('suSpecialization').value;
+    academyName = document.getElementById('suAcademyName').value.trim();
+    academyAddress = document.getElementById('suAcademyAddress').value.trim();
+    laneReservation = document.getElementById('suLaneReservation').value;
+    if (!academyName) { alert('Please enter your academy\'s name.'); return; }
   }
 
   setBusy(true); render();
@@ -417,7 +422,7 @@ async function submitSignUp() {
   // there's no active session yet to run a normal insert with.
   const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
     email, password,
-    options: { data: { role, name, phone, category, shooter_category: shooterCategory, specialization } },
+    options: { data: { role, name, phone, category, shooter_category: shooterCategory, specialization, academy_name: academyName, academy_address: academyAddress, lane_reservation: laneReservation } },
   });
   if (signUpErr) { setBusy(false); render(); alert('Sign up failed: ' + signUpErr.message); return; }
   const user = signUpData.user;
@@ -462,7 +467,7 @@ async function submitSignIn() {
 async function logout() {
   if (supabase) await sb.auth.signOut();
   state.session = null; state.profile = null; state.me = null;
-  state.scoresByStudent = {}; state.cache = { students: [], coaches: [], reminders: [], invoices: [], attendanceRequests: [] };
+  state.scoresByStudent = {}; state.cache = { students: [], coaches: [], reminders: [], invoices: [], attendanceRequests: [], inventory: [] };
   state.adminDetailId = null; state.screen = 'AUTH'; state.authTab = 'signin';
   render();
 }
@@ -476,6 +481,7 @@ async function fetchReminders() { const { data } = await sb.from('reminders').se
 async function fetchAttendanceRequests() { const { data } = await sb.from('attendance_requests').select('*'); state.cache.attendanceRequests = data || []; }
 async function fetchAllInvoices() { const { data } = await sb.from('invoices').select('*').order('paid_at', { ascending: false }); state.cache.invoices = data || []; }
 async function fetchMyInvoices(studentId) { const { data } = await sb.from('invoices').select('*').eq('student_id', studentId).order('paid_at', { ascending: false }); return data || []; }
+async function fetchInventory(coachId) { const { data } = await sb.from('inventory_items').select('*').eq('coach_id', coachId).order('name'); state.cache.inventory = data || []; }
 async function loadScoresFor(studentId) { const { data } = await sb.from('match_scores').select('*').eq('student_id', studentId); state.scoresByStudent[studentId] = data || []; }
 function scoresFor(studentId, shots, mode) {
   return (state.scoresByStudent[studentId] || [])
@@ -501,7 +507,7 @@ async function enterStudentDashboard() {
 async function enterCoachDashboard() {
   state.screen = 'LOADING'; render();
   try {
-    await Promise.all([fetchStudents(), fetchReminders(), fetchAttendanceRequests()]);
+    await Promise.all([fetchStudents(), fetchReminders(), fetchAttendanceRequests(), fetchInventory(state.me.id)]);
   } catch (err) {
     state.loadError = 'Could not load your dashboard: ' + (err && err.message ? err.message : 'check your internet connection.');
   }
@@ -713,10 +719,38 @@ function closeFeeReminderIfOverlay(e) { if (e.target.classList.contains('modal-o
 function closeFeeReminderAndPay() { state.feeReminderOpen = false; state.paymentOpen = true; render(); }
 async function generateInvoice(student, method) {
   const invoiceNumber = 'INV-' + String(student.id).slice(0, 8).toUpperCase() + '-' + Date.now().toString().slice(-6);
+
+  // Find the coach teaching this student's weapon category, for academy
+  // branding and lane info on the invoice (best-effort — falls back to
+  // generic branding if no coach has signed up for that category yet).
+  const { data: coachMatch } = await sb.from('coaches').select('*').eq('specialization', student.category).limit(1).maybeSingle();
+
+  // Any inventory items this coach has issued to the student but not yet billed.
+  let pendingIssues = [];
+  if (coachMatch) {
+    const { data: issues } = await sb.from('inventory_issues').select('*').eq('student_id', student.id).eq('invoiced', false);
+    pendingIssues = issues || [];
+  }
+
+  const fee = CATEGORIES[student.category].fee;
+  const items = [{ description: 'Shooting Training Coaching Fee', qty: 1, rate: fee, amount: fee }];
+  pendingIssues.forEach((iss) => {
+    items.push({ description: iss.item_name, qty: iss.quantity, rate: Number(iss.unit_price), amount: iss.quantity * Number(iss.unit_price) });
+  });
+  const total = items.reduce((sum, it) => sum + it.amount, 0);
+
   const { data } = await sb.from('invoices').insert({
     invoice_number: invoiceNumber, student_id: student.id, student_name: student.name,
-    email: student.email, category: student.category, amount: CATEGORIES[student.category].fee, method,
+    email: student.email, category: student.category, amount: total, method,
+    items, batch: student.batch,
+    academy_name: coachMatch && coachMatch.academy_name ? coachMatch.academy_name : 'Range Ledger',
+    academy_address: coachMatch ? coachMatch.academy_address : null,
+    lane: coachMatch && coachMatch.lane_reservation ? 'Reserved' : null,
   }).select().single();
+
+  if (pendingIssues.length && data) {
+    await sb.from('inventory_issues').update({ invoiced: true, invoice_id: data.id }).eq('student_id', student.id).eq('invoiced', false);
+  }
   return data;
 }
 async function payVia(method) {
@@ -753,27 +787,66 @@ function downloadInvoicePDF(inv) {
   if (!inv || !window.jspdf) { alert('PDF library is still loading — please try again in a moment.'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: 'a5' });
-  const pageW = doc.internal.pageSize.getWidth();
+  const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
   const brass = [169, 121, 30], ink = [43, 33, 22], dim = [138, 124, 94], line = [227, 214, 180];
-  doc.setFillColor(243, 236, 217); doc.rect(0, 0, pageW, doc.internal.pageSize.getHeight(), 'F');
-  doc.setDrawColor(brass[0], brass[1], brass[2]); doc.setLineWidth(1.2); doc.rect(18, 18, pageW - 36, doc.internal.pageSize.getHeight() - 36);
-  doc.setTextColor(brass[0], brass[1], brass[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
-  doc.text('RANGE LEDGER', pageW / 2, 52, { align: 'center' });
-  doc.setTextColor(dim[0], dim[1], dim[2]); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-  doc.text('Precision Shooting Academy · Payment Receipt', pageW / 2, 66, { align: 'center' });
-  doc.setDrawColor(line[0], line[1], line[2]); doc.setLineWidth(0.7); doc.line(30, 82, pageW - 30, 82);
+  const academyName = inv.academy_name || 'Range Ledger';
+  const items = (inv.items && inv.items.length) ? inv.items : [{ description: 'Shooting Training Coaching Fee', qty: 1, rate: Number(inv.amount), amount: Number(inv.amount) }];
+
+  doc.setFillColor(243, 236, 217); doc.rect(0, 0, pageW, pageH, 'F');
+  doc.setDrawColor(brass[0], brass[1], brass[2]); doc.setLineWidth(1.2); doc.rect(18, 18, pageW - 36, pageH - 36);
+
+  doc.setTextColor(brass[0], brass[1], brass[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+  doc.text(academyName.toUpperCase(), pageW / 2, 48, { align: 'center' });
+  doc.setTextColor(dim[0], dim[1], dim[2]); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  let headerY = 62;
+  if (inv.academy_address) { doc.text(inv.academy_address, pageW / 2, headerY, { align: 'center' }); headerY += 12; }
+  doc.text('Payment Receipt / Invoice', pageW / 2, headerY, { align: 'center' });
+  headerY += 14;
+  doc.setDrawColor(line[0], line[1], line[2]); doc.setLineWidth(0.7); doc.line(30, headerY, pageW - 30, headerY);
+  headerY += 18;
+
   doc.setTextColor(ink[0], ink[1], ink[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-  doc.text('Invoice ' + inv.invoice_number, 30, 104);
+  doc.text('Invoice ' + inv.invoice_number, 30, headerY);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(dim[0], dim[1], dim[2]);
+  doc.text('Date: ' + new Date(inv.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), pageW - 30, headerY, { align: 'right' });
+  headerY += 20;
+
+  const infoRows = [['Student', inv.student_name], ['Email', inv.email || '—'], ['Discipline', inv.category]];
+  if (inv.batch) infoRows.push(['Batch', inv.batch]);
+  if (inv.lane) infoRows.push(['Lane reservation', inv.lane]);
+  doc.setFontSize(9.5);
+  infoRows.forEach((r) => { doc.setTextColor(dim[0], dim[1], dim[2]); doc.text(r[0], 30, headerY); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text(String(r[1]), pageW - 30, headerY, { align: 'right' }); headerY += 15; });
+
+  headerY += 8;
+  doc.setDrawColor(line[0], line[1], line[2]); doc.line(30, headerY, pageW - 30, headerY);
+  headerY += 16;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(brass[0], brass[1], brass[2]);
+  doc.text('DESCRIPTION', 30, headerY); doc.text('QTY', pageW - 150, headerY, { align: 'right' }); doc.text('RATE', pageW - 90, headerY, { align: 'right' }); doc.text('AMOUNT', pageW - 30, headerY, { align: 'right' });
+  headerY += 6;
+  doc.setDrawColor(line[0], line[1], line[2]); doc.line(30, headerY, pageW - 30, headerY);
+  headerY += 16;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(ink[0], ink[1], ink[2]);
+  items.forEach((it) => {
+    doc.text(String(it.description), 30, headerY, { maxWidth: pageW - 190 });
+    doc.text(String(it.qty), pageW - 150, headerY, { align: 'right' });
+    doc.text(Number(it.rate).toLocaleString('en-IN'), pageW - 90, headerY, { align: 'right' });
+    doc.text(Number(it.amount).toLocaleString('en-IN'), pageW - 30, headerY, { align: 'right' });
+    headerY += 18;
+  });
+
+  headerY += 6;
+  doc.setDrawColor(line[0], line[1], line[2]); doc.line(30, headerY, pageW - 30, headerY);
+  headerY += 22;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(dim[0], dim[1], dim[2]);
-  doc.text('Date: ' + new Date(inv.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), pageW - 30, 104, { align: 'right' });
-  const rows = [['Student', inv.student_name], ['Email', inv.email || '—'], ['Category', inv.category], ['Payment method', inv.method], ['Status', 'PAID']];
-  let y = 132; doc.setFontSize(10);
-  rows.forEach((r) => { doc.setTextColor(dim[0], dim[1], dim[2]); doc.text(r[0], 30, y); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text(String(r[1]), pageW - 30, y, { align: 'right' }); y += 20; });
-  doc.setDrawColor(line[0], line[1], line[2]); doc.line(30, y + 4, pageW - 30, y + 4); y += 28;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text('Amount paid', 30, y);
-  doc.setFontSize(16); doc.setTextColor(brass[0], brass[1], brass[2]); doc.text('Rs. ' + Number(inv.amount).toLocaleString('en-IN'), pageW - 30, y, { align: 'right' });
-  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(dim[0], dim[1], dim[2]);
-  doc.text('Thank you for training with Range Ledger. This is a system-generated receipt.', pageW / 2, doc.internal.pageSize.getHeight() - 30, { align: 'center' });
+  doc.text('Payment method', 30, headerY); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text(inv.method, pageW - 30, headerY, { align: 'right' });
+  headerY += 22;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text('Total Amount Paid', 30, headerY);
+  doc.setFontSize(16); doc.setTextColor(brass[0], brass[1], brass[2]); doc.text('Rs. ' + Number(inv.amount).toLocaleString('en-IN'), pageW - 30, headerY, { align: 'right' });
+
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(dim[0], dim[1], dim[2]);
+  doc.text('Thank you for training with ' + academyName + '. This is a system-generated receipt.', pageW / 2, pageH - 30, { align: 'center' });
   doc.save(inv.invoice_number + '.pdf');
 }
 function paymentModal(student) {
@@ -795,15 +868,19 @@ function feeReminderModal(student) {
 function invoiceModal(invoiceId) {
   const inv = findInvoice(invoiceId);
   if (!inv) return '';
+  const items = (inv.items && inv.items.length) ? inv.items : [{ description: 'Shooting Training Coaching Fee', qty: 1, rate: Number(inv.amount), amount: Number(inv.amount) }];
   return '<div class="modal-overlay" onclick="closeInvoiceIfOverlay(event)"><div class="modal-card receipt-card" onclick="event.stopPropagation()">' +
     '<div style="text-align:center;margin-bottom:12px">' + icon('check', 26, 'var(--forest)') + '<div class="detail-name" style="margin-top:6px">Payment received</div>' +
-    '<div style="font-size:11px;color:var(--paper-dim)">Invoice ' + inv.invoice_number + '</div></div>' +
+    '<div style="font-size:11px;color:var(--paper-dim)">' + (inv.academy_name || 'Range Ledger') + ' · Invoice ' + inv.invoice_number + '</div></div>' +
     '<div class="receipt-row"><span>Student</span><span>' + inv.student_name + '</span></div>' +
     (inv.email ? '<div class="receipt-row"><span>Sent to</span><span style="font-size:11px">' + inv.email + '</span></div>' : '') +
     '<div class="receipt-row"><span>Category</span><span>' + inv.category + '</span></div>' +
     '<div class="receipt-row"><span>Date</span><span>' + new Date(inv.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '</span></div>' +
     '<div class="receipt-row"><span>Method</span><span>' + inv.method + '</span></div>' +
-    '<div class="receipt-row" style="border-top:1px dashed var(--line);margin-top:6px;padding-top:8px"><span style="font-weight:600">Amount paid</span><span class="mono-lg" style="font-size:18px">₹' + Number(inv.amount).toLocaleString('en-IN') + '</span></div>' +
+    '<div style="margin-top:8px;border-top:1px dashed var(--line);padding-top:8px">' +
+      items.map((it) => '<div class="receipt-row"><span style="font-size:11px">' + it.description + (it.qty > 1 ? ' × ' + it.qty : '') + '</span><span>₹' + Number(it.amount).toLocaleString('en-IN') + '</span></div>').join('') +
+    '</div>' +
+    '<div class="receipt-row" style="border-top:1px dashed var(--line);margin-top:6px;padding-top:8px"><span style="font-weight:600">Total paid</span><span class="mono-lg" style="font-size:18px">₹' + Number(inv.amount).toLocaleString('en-IN') + '</span></div>' +
     '<button class="btn-brass" style="margin-top:14px" onclick="downloadInvoicePDF()">' + icon('rupee', 14) + ' Download PDF</button>' +
     '<button class="chip" style="width:100%;margin-top:8px;text-align:center" onclick="closeInvoice()">Done</button></div></div>';
 }
@@ -828,6 +905,46 @@ async function toggleNationalQualified(id) {
   const next = !s.national_qualified;
   await sb.from('students').update({ national_qualified: next }).eq('id', id);
   s.national_qualified = next;
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// Inventory (coach-owned)
+// ---------------------------------------------------------------------------
+async function submitInventoryAdd() {
+  const name = document.getElementById('invItemName').value.trim();
+  const qty = parseInt(document.getElementById('invItemQty').value, 10);
+  const price = parseFloat(document.getElementById('invItemPrice').value) || 0;
+  if (!name) { alert('Please enter an item name.'); return; }
+  if (!qty || qty <= 0) { alert('Please enter a quantity greater than 0.'); return; }
+  const existing = state.cache.inventory.find((i) => i.name.trim().toLowerCase() === name.toLowerCase());
+  if (existing) {
+    const { error } = await sb.from('inventory_items').update({ quantity: existing.quantity + qty, unit_price: price || existing.unit_price, updated_at: new Date().toISOString() }).eq('id', existing.id);
+    if (error) { alert('Could not update inventory: ' + error.message); return; }
+  } else {
+    const { error } = await sb.from('inventory_items').insert({ coach_id: state.me.id, name, quantity: qty, unit_price: price });
+    if (error) { alert('Could not add item: ' + error.message); return; }
+  }
+  await fetchInventory(state.me.id);
+  document.getElementById('invItemName').value = ''; document.getElementById('invItemQty').value = ''; document.getElementById('invItemPrice').value = '';
+  render();
+}
+function toggleIssueForm(itemId) { state.issueFormItemId = state.issueFormItemId === itemId ? null : itemId; render(); }
+async function submitIssueItem(itemId) {
+  const studentId = document.getElementById('issueStudentSelect_' + itemId).value;
+  const qty = parseInt(document.getElementById('issueQty_' + itemId).value, 10);
+  const item = state.cache.inventory.find((i) => i.id === itemId);
+  if (!studentId) { alert('Please choose a student.'); return; }
+  if (!qty || qty <= 0) { alert('Please enter a quantity greater than 0.'); return; }
+  if (!item || qty > item.quantity) { alert('Not enough stock — only ' + (item ? item.quantity : 0) + ' left.'); return; }
+  const { error: issueErr } = await sb.from('inventory_issues').insert({
+    coach_id: state.me.id, student_id: studentId, item_name: item.name, quantity: qty, unit_price: item.unit_price,
+  });
+  if (issueErr) { alert('Could not issue item: ' + issueErr.message); return; }
+  const { error: updateErr } = await sb.from('inventory_items').update({ quantity: item.quantity - qty }).eq('id', itemId);
+  if (updateErr) { alert('Item was issued, but updating stock failed: ' + updateErr.message); }
+  state.issueFormItemId = null;
+  await fetchInventory(state.me.id);
   render();
 }
 async function openAdminDetail(id) {
@@ -870,7 +987,12 @@ function screenSignUp() {
       '<label class="field-label">Passport size photo (max 1MB, optional)</label><input type="file" accept="image/*" class="text-input" onchange="handlePhotoSelect(event)"/>' +
       (state.photoError ? '<div style="color:var(--rust);font-size:11px;margin-top:6px">' + state.photoError + '</div>' : '')
     ) : role === 'coach' ? (
-      '<label class="field-label">Specialization</label><select id="suSpecialization" class="text-input"><option>Air Rifle 10m</option><option>Air Pistol 10m</option></select>'
+      '<label class="field-label">Specialization</label><select id="suSpecialization" class="text-input"><option>Air Rifle 10m</option><option>Air Pistol 10m</option></select>' +
+      '<label class="field-label">Academy name</label><input id="suAcademyName" class="text-input" placeholder="e.g. Apex Target Shooting Academy"/>' +
+      '<label class="field-label">Academy address</label><input id="suAcademyAddress" class="text-input" placeholder="e.g. Plot 42, Sports Complex Zone, Sector 18"/>' +
+      '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:4px">This name and address appear on the invoices your students receive.</div>' +
+      '<label class="field-label">Does your academy have lane reservation?</label>' +
+      '<select id="suLaneReservation" class="text-input"><option value="false">No</option><option value="true">Yes</option></select>'
     ) : '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:4px">Admin signup is open here for demo purposes — restrict this in production (e.g. invite-only via the Supabase dashboard).</div>') +
     '<button class="btn-brass" style="margin-top:14px" onclick="submitSignUp()" ' + (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Creating account…' : 'Create account') + '</button>';
 }
@@ -964,6 +1086,21 @@ function pathwayGroup(title, list, color) {
   return '<div style="margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span class="eyebrow" style="font-size:10.5px">' + title + '</span><span class="mono-sm" style="color:' + color + '">' + list.length + '</span></div>' +
     (list.length ? list.map((s) => '<div class="log-row" style="cursor:pointer;padding:4px 0" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-size:11.5px;flex:1">' + s.name + '</span></div>').join('') : '<div style="font-size:11px;color:var(--paper-dim)">None yet.</div>') + '</div>';
 }
+function inventoryItemRow(item, myStudents) {
+  const issueOpen = state.issueFormItemId === item.id;
+  return '<div class="log-row" style="align-items:flex-start;flex-wrap:wrap">' +
+    '<div style="flex:1;min-width:120px"><div style="font-weight:600;font-size:12.5px">' + item.name + '</div><div style="font-size:10.5px;color:var(--paper-dim)">₹' + Number(item.unit_price).toLocaleString('en-IN') + ' each</div></div>' +
+    '<span class="mono-sm">' + item.quantity + ' in stock</span>' +
+    '<button class="chip ' + (issueOpen ? 'chip-active' : '') + '" style="padding:4px 8px" onclick="toggleIssueForm(' + item.id + ')" ' + (item.quantity <= 0 ? 'disabled' : '') + '>Give to student</button>' +
+    (issueOpen ? '<div style="width:100%;margin-top:8px;padding:8px;background:var(--line-soft);border-radius:6px">' +
+      '<select id="issueStudentSelect_' + item.id + '" class="text-input" style="margin-bottom:6px">' +
+        '<option value="">Choose a student…</option>' + myStudents.map((s) => '<option value="' + s.id + '">' + s.name + '</option>').join('') +
+      '</select>' +
+      '<input id="issueQty_' + item.id + '" class="text-input" type="number" min="1" max="' + item.quantity + '" placeholder="Quantity" style="margin-bottom:8px"/>' +
+      '<button class="btn-brass" onclick="submitIssueItem(' + item.id + ')">Issue item</button>' +
+      '<div style="font-size:9.5px;color:var(--paper-dim);margin-top:6px">Removed from stock immediately and added to this student\'s next invoice.</div></div>' : '') +
+    '</div>';
+}
 function screenCoachDashboard() {
   const spec = state.me.specialization;
   const myStudents = state.cache.students.filter((s) => s.category === spec);
@@ -984,6 +1121,17 @@ function screenCoachDashboard() {
       dueOrOverdue.map((s) => '<div class="log-row" style="cursor:pointer" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-weight:600;font-size:12px;flex:1">' + s.name + '</span><span class="mono-sm">Due ' + s.due_date + '</span>' + stamp(s.fee_status) + '</div>').join('')) + '</div>' +
     '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">Shooter pathway (' + myStudents.length + ' students)</span></div><div class="card">' +
       pathwayGroup('National Qualified', nationalQualified, 'var(--forest)') + pathwayGroup('ISSF — did not qualify Nationals yet', issfNotQualified, 'var(--brass)') + pathwayGroup('NR — new shooters', nrShooters, 'var(--rust)') + '</div></div>' +
+    '<div class="span-2"><div class="section-head"><span class="eyebrow">Inventory</span></div><div class="card">' +
+      (state.cache.inventory.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim);margin-bottom:10px">No items yet — add your first below.</div>' :
+        '<div class="logbook" style="margin-bottom:12px">' + state.cache.inventory.map((i) => inventoryItemRow(i, myStudents)).join('') + '</div>') +
+      '<div style="border-top:1px dashed var(--line);padding-top:10px">' +
+        '<div class="eyebrow" style="margin-bottom:6px">Add stock</div>' +
+        '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:6px">If an item with this name already exists, the quantity is added to it.</div>' +
+        '<input id="invItemName" class="text-input" placeholder="e.g. Match Grade Pellets (0.177, 500 pcs)" style="margin-bottom:6px"/>' +
+        '<input id="invItemQty" class="text-input" type="number" min="1" placeholder="Quantity" style="margin-bottom:6px"/>' +
+        '<input id="invItemPrice" class="text-input" type="number" min="0" step="0.01" placeholder="Price per unit (₹)" style="margin-bottom:8px"/>' +
+        '<button class="btn-brass" onclick="submitInventoryAdd()">Add to inventory</button>' +
+      '</div></div></div>' +
     '<div class="span-2"><div class="section-head"><span class="eyebrow">Your roster</span></div>' +
     '<div class="card" style="padding:0;overflow:hidden"><table class="ledger"><thead><tr><th>Student</th><th>Attendance</th><th>Fee</th></tr></thead><tbody>' +
     myStudents.map((s) => '<tr onclick="openAdminDetail(\'' + s.id + '\')"><td><div style="font-weight:600">' + s.name + '</div><div style="font-size:10.5px;color:var(--paper-dim)">' + s.batch + '</div></td><td><div class="mini-bar"><div class="mini-bar-fill" style="width:' + s.attendance + '%;background:' + (s.attendance >= 85 ? 'var(--forest)' : s.attendance >= 65 ? 'var(--brass)' : 'var(--rust)') + '"></div></div></td><td>' + stamp(s.fee_status) + '</td></tr>').join('') +
