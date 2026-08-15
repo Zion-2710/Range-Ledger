@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Range Ledger — Shooting Academy</title>
+<meta name="description" content="Manage your shooting academy — fees, invoices, attendance approval, match calendar, and performance tracking for students, coaches, and admins." />
+<meta name="theme-color" content="#F3ECD9" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A9791E' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cline x1='12' y1='1' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='1' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='23' y2='12'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23F3ECD9' stroke='%23A9791E' stroke-width='1.6' stroke-linecap='round'%3E%3Crect width='24' height='24' rx='5' fill='%23F3ECD9'/%3E%3Ccircle cx='12' cy='12' r='7.5'/%3E%3Cline x1='12' y1='3' x2='12' y2='6'/%3E%3Cline x1='12' y1='18' x2='12' y2='21'/%3E%3Cline x1='3' y1='12' x2='6' y2='12'/%3E%3Cline x1='18' y1='12' x2='21' y2='12'/%3E%3C/svg%3E" />
+<link rel="manifest" href="manifest.json" />
+<meta property="og:title" content="Range Ledger — Shooting Academy" />
+<meta property="og:description" content="Fees, invoices, attendance, match calendar, and performance tracking for a precision shooting academy." />
+<meta property="og:type" content="website" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root {
+    --bg: #F3ECD9; --ink: #FDFAF1; --paper: #2B2116; --paper-dim: #8A7C5E;
+    --brass: #A9791E; --olive: #5F7043; --forest: #3F7A52; --rust: #B5432B;
+    --line: #E3D6B4; --line-soft: #ECE0C2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); font-family: 'IBM Plex Sans', sans-serif; color: var(--paper); position: relative; }
+
+  .bg-target {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 22%, rgba(43,33,22,0.28) 0 3px, transparent 3px 4.5px),
+      radial-gradient(circle at 83% 16%, rgba(43,33,22,0.24) 0 2.5px, transparent 2.5px 4px),
+      radial-gradient(circle at 72% 82%, rgba(43,33,22,0.26) 0 3px, transparent 3px 4.5px),
+      radial-gradient(circle at 10% 78%, rgba(43,33,22,0.22) 0 2.5px, transparent 2.5px 4px),
+      radial-gradient(circle at 90% 58%, rgba(43,33,22,0.24) 0 2.5px, transparent 2.5px 4px),
+      radial-gradient(circle at 50% 34%, rgba(181,67,43,0.55) 0 7px, transparent 7px 8px),
+      repeating-radial-gradient(circle at 50% 34%, rgba(181,67,43,0.20) 0px, rgba(181,67,43,0.20) 3px, transparent 3px, transparent 42px),
+      repeating-radial-gradient(circle at 50% 34%, rgba(43,33,22,0.06) 0px, rgba(43,33,22,0.06) 1px, transparent 1px, transparent 42px);
+  }
+  .phone { position: relative; z-index: 1; }
+
+  .config-banner { background: #B5432B; color: #fff; font-size: 12px; padding: 10px 16px; text-align: center; font-family: 'IBM Plex Mono', monospace; position: relative; z-index: 2; }
+  .load-error-banner { background: rgba(181,67,43,0.12); border: 1px solid var(--rust); color: var(--rust); border-radius: 6px; padding: 10px 12px; font-size: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .load-error-banner button { font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.04em; background: none; border: 1px solid var(--rust); color: var(--rust); border-radius: 5px; padding: 4px 8px; cursor: pointer; }
+  .config-banner code { background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 3px; }
+
+  .phone {
+    width: 100%; max-width: 100%; margin: 0; border: none; border-radius: 0; overflow: hidden;
+    box-shadow: none; background: var(--bg); min-height: 100vh;
+  }
+  .status-bar { display: flex; justify-content: space-between; padding: 8px 18px 0; font-size: 11px; color: var(--paper-dim); font-family: 'IBM Plex Mono', monospace; }
+
+  .eyebrow { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.08em; font-size: 11.5px; color: var(--paper-dim); }
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 10px; }
+
+  .app-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .screen-pad { padding: 16px; }
+  .splash { padding: 50px 20px 20px; position: relative; overflow: hidden; }
+  .target-watermark::before {
+    content: ''; position: absolute; top: -70px; left: 50%; transform: translateX(-50%);
+    width: 360px; height: 360px; border-radius: 50%; pointer-events: none;
+    background:
+      radial-gradient(circle, rgba(181,67,43,0.55) 0 6px, transparent 6px 7px),
+      repeating-radial-gradient(circle, rgba(181,67,43,0.22) 0px, rgba(181,67,43,0.22) 3px, transparent 3px, transparent 30px);
+  }
+  .target-watermark > * { position: relative; z-index: 1; }
+  .brand-center { text-align: center; }
+  .pulse-loading { animation: pulseFade 1.4s ease-in-out infinite; }
+  @keyframes pulseFade { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .brand-title { font-family: 'Oswald', sans-serif; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+  .brand-sub { font-size: 12px; color: var(--paper-dim); margin-top: 2px; }
+
+  .auth-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .auth-tab { flex: 1; text-align: center; padding: 9px; border-radius: 6px; border: 1px solid var(--line); background: var(--ink); color: var(--paper-dim); font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.05em; cursor: pointer; }
+  .auth-tab.active { border-color: var(--brass); color: var(--brass); font-weight: 600; }
+
+  .role-card { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 10px; color: var(--paper); cursor: pointer; text-align: left; }
+  .role-card:hover { border-color: var(--brass); }
+
+  .field-label { display: block; font-size: 11px; color: var(--paper-dim); margin: 10px 0 4px; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; }
+  .text-input { width: 100%; background: var(--ink); border: 1px solid var(--line); color: var(--paper); border-radius: 6px; padding: 9px 10px; font-size: 13px; font-family: 'IBM Plex Sans', sans-serif; }
+  select.text-input { appearance: none; }
+
+  .btn-brass { background: var(--brass); color: var(--ink); border: none; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11.5px; font-weight: 600; padding: 10px 14px; border-radius: 5px; cursor: pointer; width: 100%; }
+  .btn-brass:hover { filter: brightness(1.08); }
+  .btn-brass:disabled { opacity: 0.6; cursor: default; }
+
+  .icon-btn { background: var(--ink); border: 1px solid var(--line); border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--paper-dim); cursor: pointer; position: relative; }
+  .icon-btn.small { width: 26px; height: 26px; }
+  .dot-badge { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; border-radius: 50%; background: var(--brass); border: 1.5px solid var(--bg); }
+
+  .popover { position: absolute; top: 42px; right: 0; width: 250px; background: var(--ink); border: 1px solid var(--brass); border-radius: 8px; padding: 12px; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .popover.cal-popover { width: 292px; }
+  .popover-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .reminder-list { display: flex; flex-direction: column; gap: 2px; max-height: 150px; overflow: auto; }
+  .reminder-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .reminder-row:last-child { border-bottom: none; }
+
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 9.5px; color: var(--paper-dim); margin-bottom: 4px; font-family: 'IBM Plex Mono', monospace; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
+  .cal-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; font-size: 10.5px; font-family: 'IBM Plex Mono', monospace; color: var(--paper); }
+  .cal-cell:hover { background: rgba(201,162,75,0.14); }
+  .cal-cell.empty { cursor: default; visibility: hidden; }
+  .cal-cell.today { border: 1px solid var(--brass); }
+  .cal-cell.selected { background: var(--brass); color: var(--ink); font-weight: 600; }
+  .cal-dots { display: flex; gap: 2px; margin-top: 1px; height: 4px; }
+  .cal-dot { width: 4px; height: 4px; border-radius: 50%; }
+  .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 8px 0; padding-top: 8px; border-top: 1px dashed var(--line); }
+  .elig-badge { display: inline-block; font-family: 'Oswald', sans-serif; font-size: 8.5px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600; color: var(--elig-color); border: 1px solid var(--elig-color); border-radius: 3px; padding: 1px 5px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--paper-dim); }
+  .legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 30; padding: 20px; }
+  .modal-card { background: var(--ink); border: 1px solid var(--brass); border-radius: 10px; padding: 18px; width: 100%; max-width: 300px; max-height: 640px; overflow-y: auto; }
+  .receipt-card { background: repeating-linear-gradient(var(--ink), var(--ink) 27px, var(--line-soft) 27px, var(--line-soft) 28px); }
+  .receipt-row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; padding: 4px 0; }
+  .receipt-row span:first-child { color: var(--paper-dim); }
+  .pay-option { width: 100%; text-align: left; background: var(--bg); border: 1px solid var(--line); color: var(--paper); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .pay-option:hover { border-color: var(--brass); }
+
+  .card { background: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+  .stat-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .statcard { background: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .statcard-icon { width: 30px; height: 30px; border-radius: 6px; background: rgba(201,162,75,0.12); color: var(--brass); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .statcard-value { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 16px; }
+  .fee-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fee-card { display: flex; align-items: center; gap: 8px; padding: 12px; }
+
+  .mono-lg { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 20px; margin-bottom: 4px; }
+  .mono-sm { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--brass); }
+  .detail-name { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; }
+
+  .toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .chip { font-family: 'Oswald', sans-serif; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--ink); color: var(--paper-dim); cursor: pointer; }
+  .chip-active { border-color: var(--brass); color: var(--brass); }
+
+  .stamp { display: inline-flex; align-items: center; gap: 5px; font-family: 'Oswald', sans-serif; font-size: 10px; letter-spacing: 0.07em; font-weight: 600; color: var(--stamp-color); border: 1.5px solid var(--stamp-color); padding: 3px 8px 3px 6px; border-radius: 3px; transform: rotate(-3deg); position: relative; }
+  .stamp::before { content: ''; position: absolute; inset: -3px; border: 1px solid var(--stamp-color); opacity: 0.35; border-radius: 4px; pointer-events: none; }
+
+  .logbook { display: flex; flex-direction: column; }
+  .analysis-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 10px 0; padding: 8px; background: var(--line-soft); border-radius: 6px; }
+  .analysis-cell { text-align: center; }
+  .log-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .log-row:last-child { border-bottom: none; }
+
+  .ledger { width: 100%; border-collapse: collapse; }
+  .ledger th { text-align: left; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; font-size: 9.5px; color: var(--paper-dim); padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .ledger td { padding: 10px 12px; border-bottom: 1px solid var(--line-soft); font-size: 12px; }
+  .ledger tr:last-child td { border-bottom: none; }
+  .ledger tbody tr { cursor: pointer; }
+  .ledger tbody tr:hover { background: rgba(201,162,75,0.06); }
+
+  .mini-bar { width: 60px; height: 6px; background: var(--line-soft); border-radius: 3px; overflow: hidden; }
+  .mini-bar-fill { height: 100%; border-radius: 3px; }
+
+  .back-btn { display: flex; align-items: center; gap: 4px; background: none; border: none; color: var(--paper-dim); font-size: 12px; cursor: pointer; margin-bottom: 10px; padding: 0; }
+  .back-btn:hover { color: var(--brass); }
+
+  .avatar-fallback { border-radius: 50%; background: var(--olive); color: var(--ink); display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-weight: 600; border: 1.5px solid var(--brass); }
+
+  /* Toasts */
+  .toast-stack { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 8px; width: min(340px, calc(100% - 28px)); pointer-events: none; }
+  .toast { pointer-events: auto; background: var(--ink); border: 1px solid var(--line); border-left: 4px solid var(--brass); border-radius: 7px; padding: 10px 12px; font-size: 12.5px; box-shadow: 0 10px 28px rgba(43,33,22,0.22); display: flex; align-items: flex-start; gap: 8px; animation: toast-in 0.25s ease; }
+  .toast.success { border-left-color: var(--forest); }
+  .toast.error { border-left-color: var(--rust); }
+  .toast-close { background: none; border: none; color: var(--paper-dim); cursor: pointer; padding: 0; margin-left: auto; flex-shrink: 0; }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Loading screen */
+  .loading-crosshair { animation: pulse-fade 1.6s ease-in-out infinite; }
+  @keyframes pulse-fade { 0%, 100% { opacity: 0.45; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1); } }
+
+  /* Photo upload */
+  .photo-upload { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .photo-upload-btn { display: flex; align-items: center; gap: 6px; background: var(--ink); border: 1px dashed var(--line); color: var(--paper-dim); border-radius: 6px; padding: 10px 12px; font-size: 12px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  .photo-upload-btn:hover { border-color: var(--brass); color: var(--brass); }
+
+  /* Password visibility toggle */
+  .password-wrap { position: relative; }
+  .password-wrap input { padding-right: 36px; }
+  .password-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--paper-dim); cursor: pointer; padding: 4px; display: flex; }
+  .password-toggle:hover { color: var(--brass); }
+
+  /* General interactivity polish */
+  .btn-brass, .chip, .role-card, .pay-option, .icon-btn, .photo-upload-btn { transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, filter 0.12s ease; }
+  .btn-brass:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(169,121,30,0.3); }
+  .btn-brass:active:not(:disabled) { transform: translateY(0); }
+  .role-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(43,33,22,0.08); }
+  .card { transition: box-shadow 0.15s ease; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .role-card:focus-visible {
+    outline: 2px solid var(--brass); outline-offset: 1px;
+  }
+  .modal-card { animation: modal-in 0.18s ease; }
+  @keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  ::selection { background: rgba(169,121,30,0.25); }
+
+  .dashboard-grid { display: flex; flex-direction: column; gap: 12px; }
+  .dashboard-grid .span-2 { }
+  .score-views { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+  .score-panel { min-width: 0; }
+  .score-views .score-panel:nth-child(2) { border-left: 1px dashed var(--line); padding-left: 10px; }
+
+  @media (min-width: 860px) {
+    body { background: #E7DBB9; padding: 40px 24px; }
+    .phone { max-width: 1180px; margin: 0 auto; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 30px 80px rgba(43,33,22,0.20); min-height: 82vh; overflow: hidden; }
+    .app-topbar { padding: 20px 48px; }
+    .screen-pad { padding: 30px 48px 48px; }
+    .splash { max-width: 480px; margin: 0 auto; padding: 80px 20px 20px; }
+    .card { padding: 20px 24px; }
+    .detail-name { font-size: 20px; }
+    .mono-lg { font-size: 24px; }
+    .eyebrow { font-size: 12px; }
+    .role-card { padding: 18px 20px; }
+    .stat-row-2 { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .fee-grid-2 { grid-template-columns: repeat(2, minmax(230px, 1fr)); max-width: 560px; }
+    .ledger th, .ledger td { padding: 12px 18px; font-size: 13px; }
+    .popover.cal-popover { width: 320px; }
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    .dashboard-grid .span-2 { grid-column: 1 / -1; }
+    .score-views { gap: 20px; }
+    .score-views .score-panel:nth-child(2) { padding-left: 20px; }
+    .analysis-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-target"></div>
+<div id="configBanner"></div>
+<div class="phone"><div id="root"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+// =============================================================================
+// CONFIG — fill these in with your own Supabase project (Project Settings > API).
+// This file will not connect to anything real until you do.
+// =============================================================================
+const SUPABASE_URL = 'https://scjrwggjwhuhutfvwmhy.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjanJ3Z2dqd2h1aHV0ZnZ3bWh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0Mzc0NjcsImV4cCI6MjEwMjAxMzQ2N30.cH9TRieNMFolnGJnjMrlgxPlHgxZibxM5SNdbTkuPAs';
+
+const CONFIGURED = !SUPABASE_URL.startsWith('YOUR_') && !SUPABASE_ANON_KEY.startsWith('YOUR_');
+if (!CONFIGURED) {
+  document.getElementById('configBanner').innerHTML =
+    '<div class="config-banner">⚠ Not connected — set <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> at the top of this file (see schema.sql for the matching database setup).</div>';
+} else if (typeof window.supabase === 'undefined') {
+  document.getElementById('configBanner').innerHTML =
+    '<div class="config-banner">⚠ Could not load the Supabase library — check your internet connection, then reload this page. If you\'re viewing this inside a chat preview, try downloading the file and opening it directly in a browser tab instead.</div>';
+}
+const sb = (CONFIGURED && typeof window.supabase !== 'undefined') ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+// =============================================================================
+// Icons
+// =============================================================================
+function icon(name, size, color) {
+  size = size || 16; color = color || 'currentColor';
+  const paths = {
+    crosshair: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="1" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="1" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="23" y2="12"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    bell: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+    user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/>',
+    chevronLeft: '<polyline points="15 18 9 12 15 6"/>',
+    chevronRight: '<polyline points="9 18 15 12 9 6"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>',
+    rupee: '<path d="M6 4h12M6 9h12M6 4c4 0 7 1.5 7 4.5S10 13 6 13l8 8"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+    menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
+  };
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (paths[name] || '') + '</svg>';
+}
+
+// =============================================================================
+// Static reference data (not user data — same for everyone)
+// =============================================================================
+const CATEGORIES = {
+  'Air Rifle 10m': { fee: 2000, color: '#8FAE8A' },
+  'Air Pistol 10m': { fee: 2200, color: '#93A8BE' },
+};
+const MATCH_TYPES = ['10', '20', '30', '40', '60'];
+const MAX_INTEGER = { 10: 100, 20: 200, 30: 300, 40: 400, 60: 600 };
+const MAX_DECIMAL = { 10: 109.0, 20: 218.0, 30: 327.0, 40: 436.0, 60: 654.0 };
+const STATUS_META = {
+  PAID: { color: 'var(--forest)', icon: 'check' },
+  DUE: { color: 'var(--brass)', icon: 'alert' },
+  OVERDUE: { color: 'var(--rust)', icon: 'x' },
+  CASH_PENDING: { color: 'var(--brass)', icon: 'clock' },
+};
+const ATT_META = {
+  APPROVED: { color: 'var(--forest)', icon: 'check' },
+  REJECTED: { color: 'var(--rust)', icon: 'x' },
+  PENDING: { color: 'var(--brass)', icon: 'clock' },
+};
+const TYPE_COLORS = {
+  'Practice Match': 'var(--olive)', 'State': 'var(--brass)', 'North Zone': '#7C93B5',
+  'India Open': '#AD7BAB', 'National Competition': 'var(--rust)',
+};
+const REMINDER_TYPES = Object.keys(TYPE_COLORS);
+
+function eligibilityInfo(type, cat) {
+  const rules = {
+    'Practice Match': { ok: true, note: 'Open to all shooters, any category' },
+    'State': { ok: true, note: 'Entry-level — open to ISSF & NR shooters' },
+    'North Zone': { ok: 'cond', note: 'Open once you\'ve shot your State Championship (Rule 1.4) · you\'ll enter ' + cat + ' matches' },
+    'India Open': { ok: 'cond', note: 'Open once you\'ve shot State/Pre-State (Rule 1.4) · you\'ll enter ' + cat + ' matches' },
+    'National Competition': cat === 'NR'
+      ? { ok: 'cond', note: 'NR matches — achieving MQS at Zonal/India Open qualifies you (Rule 17.6)' }
+      : { ok: 'cond', note: 'ISSF matches need MQS from a prior NSCC (Rule 17.6) · else you shoot the MQS category' },
+  };
+  return rules[type] || { ok: 'cond', note: 'Check the NRAI Match Book for this event\'s entry rules' };
+}
+function formatDate(iso) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+function daysUntil(iso) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const target = new Date(iso + 'T00:00:00');
+  const diff = Math.round((target - today) / 86400000);
+  if (diff === 0) return 'Today'; if (diff === 1) return 'Tomorrow'; if (diff < 0) return Math.abs(diff) + 'd ago';
+  return 'in ' + diff + 'd';
+}
+
+// =============================================================================
+// App state — session/profile come from Supabase; cache holds the last fetch
+// of each table so re-renders don't need a round trip for every click.
+// =============================================================================
+const state = {
+  screen: 'LOADING',
+  authTab: 'signin',
+  busy: false,
+  session: null,
+  profile: null,       // { id, role, name }
+  me: null,             // the students/coaches row for the signed-in user
+  cache: { students: [], coaches: [], reminders: [], invoices: [], attendanceRequests: [] },
+  scoresByStudent: {},  // studentId -> array of match_scores rows
+  pendingPhotoFile: null,
+  photoError: '',
+  calendarOpen: false,
+  calendarViewDate: (() => { const t = new Date(); return { year: t.getFullYear(), month: t.getMonth() }; })(),
+  selectedReminderDate: null,
+  addReminderOpen: false,
+  paymentOpen: false,
+  feeReminderOpen: false,
+  invoiceOpenId: null,
+  adminDetailId: null,
+  accountMenuOpen: false,
+  accountForm: null,
+  loadError: null,
+  chartMatchType: '10',
+};
+
+function render() { document.getElementById('root').innerHTML = App(); }
+function setBusy(b) { state.busy = b; }
+
+// =============================================================================
+// Boot / auth
+// =============================================================================
+async function boot() {
+  if (!CONFIGURED || !sb) { state.screen = 'AUTH'; render(); return; }
+  const { data } = await sb.auth.getSession();
+  state.session = data.session;
+  if (state.session) {
+    await fetchProfile();
+    if (state.profile) { await routeAfterAuth(); return; }
+  }
+  state.screen = 'AUTH';
+  render();
+}
+async function fetchProfile() {
+  const { data } = await sb.from('profiles').select('*').eq('id', state.session.user.id).single();
+  state.profile = data;
+}
+async function routeAfterAuth() {
+  if (state.profile.role === 'student') {
+    const { data, error } = await sb.from('students').select('*').eq('id', state.profile.id).single();
+    if (error) { alert('Signed in, but could not load your student record: ' + error.message + ' (if this is a test account from before a recent fix, ask whoever manages the database to run the backfill migration.)'); }
+    state.me = data;
+    await enterStudentDashboard();
+  } else if (state.profile.role === 'coach') {
+    const { data, error } = await sb.from('coaches').select('*').eq('id', state.profile.id).single();
+    if (error) { alert('Signed in, but could not load your coach record: ' + error.message + ' (if this is a test account from before a recent fix, ask whoever manages the database to run the backfill migration.)'); }
+    state.me = data;
+    await enterCoachDashboard();
+  } else {
+    await enterAdminDashboard();
+  }
+}
+function setAuthTab(t) { state.authTab = t; render(); }
+function handlePhotoSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 1024 * 1024) { state.photoError = 'File too large — please choose a photo under 1MB.'; state.pendingPhotoFile = null; render(); return; }
+  state.photoError = ''; state.pendingPhotoFile = file; render();
+}
+async function submitSignUp() {
+  const role = document.getElementById('suRole').value;
+  const name = document.getElementById('suName').value.trim();
+  const email = document.getElementById('suEmail').value.trim();
+  const password = document.getElementById('suPassword').value;
+  if (!name || !email || !password) { alert('Please fill in your name, email, and password.'); return; }
+  if (password.length < 6) { alert('Password must be at least 6 characters.'); return; }
+
+  let phone = '', category = '', shooterCategory = '', specialization = '';
+  if (role === 'student') {
+    phone = document.getElementById('suPhone').value.trim();
+    category = document.getElementById('suWeapon').value;
+    shooterCategory = document.getElementById('suShooterCategory').value;
+    if (!phone) { alert('Please enter your mobile number.'); return; }
+  } else if (role === 'coach') {
+    specialization = document.getElementById('suSpecialization').value;
+  }
+
+  setBusy(true); render();
+  // These extra fields ride along as auth metadata, so the database trigger
+  // (see migration 20260101000001) can create the profiles/students/coaches
+  // row immediately — even if your project requires email confirmation and
+  // there's no active session yet to run a normal insert with.
+  const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
+    email, password,
+    options: { data: { role, name, phone, category, shooter_category: shooterCategory, specialization } },
+  });
+  if (signUpErr) { setBusy(false); render(); alert('Sign up failed: ' + signUpErr.message); return; }
+  const user = signUpData.user;
+  if (!user || !signUpData.session) {
+    setBusy(false); state.authTab = 'signin'; state.screen = 'AUTH'; render();
+    alert('Account created. Your profile is saved. If email confirmation is required on your Supabase project, check your inbox, then sign in.');
+    return;
+  }
+
+  // Photo upload needs an active session, so it only happens here (not in
+  // the trigger). The row itself was already created by the trigger — this
+  // just fills in the photo afterward.
+  if (role === 'student' && state.pendingPhotoFile) {
+    const path = user.id + '/' + Date.now() + '-' + state.pendingPhotoFile.name;
+    const { error: upErr } = await sb.storage.from('avatars').upload(path, state.pendingPhotoFile);
+    if (upErr) {
+      alert('Account created, but the photo upload failed: ' + upErr.message + ' (you can skip this or try again later.)');
+    } else {
+      const { data: pub } = sb.storage.from('avatars').getPublicUrl(path);
+      const { error: photoErr } = await sb.from('students').update({ photo_url: pub.publicUrl }).eq('id', user.id);
+      if (photoErr) alert('Account created, but saving the photo failed: ' + photoErr.message);
+    }
+  }
+
+  state.session = signUpData.session;
+  state.profile = { id: user.id, role, name };
+  setBusy(false);
+  await routeAfterAuth();
+}
+async function submitSignIn() {
+  const email = document.getElementById('siEmail').value.trim();
+  const password = document.getElementById('siPassword').value;
+  if (!email || !password) { alert('Please enter your email and password.'); return; }
+  setBusy(true); render();
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) { setBusy(false); render(); alert('Sign in failed: ' + error.message); return; }
+  state.session = data.session;
+  await fetchProfile();
+  setBusy(false);
+  await routeAfterAuth();
+}
+async function logout() {
+  if (supabase) await sb.auth.signOut();
+  state.session = null; state.profile = null; state.me = null;
+  state.scoresByStudent = {}; state.cache = { students: [], coaches: [], reminders: [], invoices: [], attendanceRequests: [] };
+  state.adminDetailId = null; state.screen = 'AUTH'; state.authTab = 'signin';
+  render();
+}
+
+// =============================================================================
+// Data loaders
+// =============================================================================
+async function fetchStudents() { const { data } = await sb.from('students').select('*').order('name'); state.cache.students = data || []; }
+async function fetchCoaches() { const { data } = await sb.from('coaches').select('*').order('name'); state.cache.coaches = data || []; }
+async function fetchReminders() { const { data } = await sb.from('reminders').select('*').order('date'); state.cache.reminders = data || []; }
+async function fetchAttendanceRequests() { const { data } = await sb.from('attendance_requests').select('*'); state.cache.attendanceRequests = data || []; }
+async function fetchAllInvoices() { const { data } = await sb.from('invoices').select('*').order('paid_at', { ascending: false }); state.cache.invoices = data || []; }
+async function fetchMyInvoices(studentId) { const { data } = await sb.from('invoices').select('*').eq('student_id', studentId).order('paid_at', { ascending: false }); return data || []; }
+async function loadScoresFor(studentId) { const { data } = await sb.from('match_scores').select('*').eq('student_id', studentId); state.scoresByStudent[studentId] = data || []; }
+function scoresFor(studentId, shots, mode) {
+  return (state.scoresByStudent[studentId] || [])
+    .filter((r) => r.shots === Number(shots) && r.mode === mode)
+    .sort((a, b) => a.id - b.id)
+    .map((r) => ({ session: r.session_label, score: Number(r.score) }));
+}
+
+async function enterStudentDashboard() {
+  state.screen = 'LOADING'; state.chartMatchType = '10'; render();
+  try {
+    await Promise.all([fetchReminders(), loadScoresFor(state.me.id)]);
+    state.cache.myInvoices = await fetchMyInvoices(state.me.id);
+    const pending = await sb.from('attendance_requests').select('*').eq('student_id', state.me.id);
+    state.cache.myAttendance = pending.data || [];
+  } catch (err) {
+    state.loadError = 'Could not load your dashboard: ' + (err && err.message ? err.message : 'check your internet connection.');
+  }
+  state.feeReminderOpen = state.me.fee_status === 'DUE' || state.me.fee_status === 'OVERDUE';
+  state.screen = 'STUDENT_DASHBOARD';
+  render();
+}
+async function enterCoachDashboard() {
+  state.screen = 'LOADING'; render();
+  try {
+    await Promise.all([fetchStudents(), fetchReminders(), fetchAttendanceRequests()]);
+  } catch (err) {
+    state.loadError = 'Could not load your dashboard: ' + (err && err.message ? err.message : 'check your internet connection.');
+  }
+  state.screen = 'COACH_DASHBOARD';
+  render();
+}
+async function enterAdminDashboard() {
+  state.screen = 'LOADING'; render();
+  try {
+    await Promise.all([fetchStudents(), fetchCoaches(), fetchReminders(), fetchAttendanceRequests(), fetchAllInvoices()]);
+  } catch (err) {
+    state.loadError = 'Could not load the dashboard: ' + (err && err.message ? err.message : 'check your internet connection.');
+  }
+  state.screen = 'ADMIN_DASHBOARD';
+  render();
+}
+function goHome() { logout(); }
+function dismissLoadError() { state.loadError = null; render(); }
+function retryLoad() { state.loadError = null; routeAfterAuth(); }
+
+// =============================================================================
+// Small render helpers (identical look to the static version)
+// =============================================================================
+function stamp(status) {
+  const meta = STATUS_META[status]; const label = status === 'CASH_PENDING' ? 'CASH PENDING' : status;
+  return '<span class="stamp" style="--stamp-color:' + meta.color + '">' + icon(meta.icon, 11) + ' ' + label + '</span>';
+}
+function attStamp(status) {
+  const meta = ATT_META[status];
+  return '<span class="stamp" style="--stamp-color:' + meta.color + '">' + icon(meta.icon, 11) + ' ' + status + '</span>';
+}
+function avatar(person, size) {
+  size = size || 44;
+  if (person.photo_url) return '<img src="' + person.photo_url + '" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:cover;border:1.5px solid var(--brass)" />';
+  const initials = (person.name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  return '<div class="avatar-fallback" style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.36) + 'px">' + initials + '</div>';
+}
+function ringGauge(percent, size) {
+  size = size || 74;
+  const stroke = 7, r = (size - stroke) / 2, c = 2 * Math.PI * r, offset = c - (percent / 100) * c;
+  const color = percent >= 85 ? 'var(--forest)' : percent >= 65 ? 'var(--brass)' : 'var(--rust)';
+  return '<div style="position:relative;width:' + size + 'px;height:' + size + 'px;margin:0 auto"><svg width="' + size + '" height="' + size + '" style="transform:rotate(-90deg)">' +
+    '<circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" stroke="var(--line-soft)" stroke-width="' + stroke + '" fill="none"/>' +
+    '<circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" stroke="' + color + '" stroke-width="' + stroke + '" fill="none" stroke-dasharray="' + c + '" stroke-dashoffset="' + offset + '" stroke-linecap="round"/></svg>' +
+    '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-weight:600;font-size:' + Math.round(size * 0.22) + 'px;color:var(--paper)">' + percent + '%</div></div>';
+}
+function lineChartSvg(data, max, yFloor) {
+  const w = 272, h = 130, padL = 34, padB = 20, padT = 8, padR = 8;
+  const innerW = w - padL - padR, innerH = h - padT - padB;
+  const xStep = innerW / (data.length - 1 || 1);
+  const scaleY = (v) => padT + innerH - ((v - yFloor) / (max - yFloor)) * innerH;
+  const points = data.map((d, i) => (padL + i * xStep) + ',' + scaleY(d.score)).join(' ');
+  const gridLines = [0, 0.5, 1].map((f) => { const y = padT + innerH * f; return '<line x1="' + padL + '" y1="' + y + '" x2="' + (w - padR) + '" y2="' + y + '" stroke="var(--line-soft)" stroke-dasharray="2 4"/>'; }).join('');
+  const dots = data.map((d, i) => '<circle cx="' + (padL + i * xStep) + '" cy="' + scaleY(d.score) + '" r="3" fill="var(--brass)"/>').join('');
+  const labels = data.map((d, i) => '<text x="' + (padL + i * xStep) + '" y="' + (h - 4) + '" font-size="10" fill="var(--paper-dim)" text-anchor="middle" font-family="IBM Plex Mono">' + d.session + '</text>').join('');
+  if (data.length === 0) return '';
+  return '<svg width="100%" viewBox="0 0 ' + w + ' ' + h + '" style="overflow:visible">' + gridLines + '<polyline points="' + points + '" fill="none" stroke="var(--brass)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' + dots + labels + '</svg>';
+}
+function performanceAnalysis(data, max) {
+  if (data.length < 2) return null;
+  const scores = data.map((d) => d.score);
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const best = Math.max(...scores);
+  const mid = Math.floor(scores.length / 2);
+  const firstHalf = scores.slice(0, mid || 1), secondHalf = scores.slice(mid || 1);
+  const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+  const secondAvg = secondHalf.length ? secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length : firstAvg;
+  const diff = secondAvg - firstAvg;
+  let trend, trendColor;
+  if (diff > max * 0.015) { trend = 'Improving ↑'; trendColor = 'var(--forest)'; }
+  else if (diff < -max * 0.015) { trend = 'Declining ↓'; trendColor = 'var(--rust)'; }
+  else { trend = 'Steady →'; trendColor = 'var(--brass)'; }
+  const variance = scores.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / scores.length;
+  const stdDev = Math.sqrt(variance);
+  const consistency = stdDev < max * 0.03 ? 'Very consistent' : stdDev < max * 0.06 ? 'Some variation' : 'High variation';
+  return { avg, best, trend, trendColor, consistency };
+}
+function scorePanel(studentId, mode, allowLogging) {
+  const shots = Number(state.chartMatchType);
+  const max = mode === 'decimal' ? MAX_DECIMAL[shots] : MAX_INTEGER[shots];
+  const perShot = mode === 'decimal' ? 10.9 : 10;
+  const data = scoresFor(studentId, shots, mode);
+  const fmt = (v) => mode === 'decimal' ? v.toFixed(1) : Math.round(v);
+  const yFloor = mode === 'decimal' ? Math.round(max * 0.4 * 10) / 10 : Math.round(max * 0.4);
+  const analysis = performanceAnalysis(data, max);
+  const label = mode === 'decimal' ? 'Decimal scoring (10.9/shot)' : 'Whole scoring (10.0/shot)';
+  return '<div class="score-panel"><div class="eyebrow" style="margin-bottom:8px">' + label + '</div>' +
+    '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:8px">Max for ' + state.chartMatchType + ' shots: <span class="mono-sm" style="color:var(--paper)">' + max.toFixed(1) + '</span> (' + perShot + ' pts/shot)</div>' +
+    (data.length === 0 ? '<div style="text-align:center;padding:20px 0;color:var(--paper-dim);font-size:11.5px;border:1px dashed var(--line);border-radius:6px">No sessions logged yet.' + (allowLogging ? '<br/>Add your first score below.' : '') + '</div>' :
+    lineChartSvg(data, max, yFloor) +
+    (analysis ? '<div class="analysis-grid"><div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:var(--paper)">' + fmt(analysis.avg) + '</div><div class="eyebrow" style="font-size:9px">Average</div></div>' +
+      '<div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:var(--paper)">' + fmt(analysis.best) + '</div><div class="eyebrow" style="font-size:9px">Best</div></div>' +
+      '<div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:' + analysis.trendColor + '">' + analysis.trend + '</div><div class="eyebrow" style="font-size:9px">Trend</div></div>' +
+      '<div class="analysis-cell"><div class="mono-sm" style="font-size:11.5px;color:var(--paper)">' + analysis.consistency + '</div><div class="eyebrow" style="font-size:9px">Consistency</div></div></div>'
+      : '<div style="font-size:10.5px;color:var(--paper-dim);margin:6px 0">Log at least 2 sessions to see your performance analysis.</div>') +
+    '<div class="logbook" style="margin-top:10px">' + data.slice().reverse().map((s) => '<div class="log-row"><span class="mono-sm">' + s.session + '</span><span style="font-size:11.5px;flex:1">' + state.chartMatchType + '-shot match — scored ' + fmt(s.score) + '</span><span class="mono-sm" style="color:var(--paper-dim)">Present</span></div>').join('') + '</div>') +
+    (allowLogging ? '<div style="margin-top:12px;border-top:1px dashed var(--line);padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Log a session score</div>' +
+      '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:6px">Enter your ' + state.chartMatchType + '-shot score out of ' + max.toFixed(1) + '</div>' +
+      '<input id="sessionScoreInput_' + mode + '" class="text-input" type="number" step="0.1" min="0" max="' + max + '" placeholder="e.g. ' + (max * 0.75).toFixed(1) + '" style="margin-bottom:8px"/>' +
+      '<button class="btn-brass" onclick="logSessionScore(\'' + mode + '\')">Add session</button></div>' : '') + '</div>';
+}
+function matchScoreSection(studentId, allowLogging) {
+  return '<div class="toolbar" style="margin-bottom:12px">' +
+    MATCH_TYPES.map((t) => '<button class="chip ' + (state.chartMatchType === t ? 'chip-active' : '') + '" onclick="setChartMatchType(\'' + t + '\')">' + t + ' shots</button>').join('') + '</div>' +
+    '<div class="score-views">' + scorePanel(studentId, 'integer', allowLogging) + scorePanel(studentId, 'decimal', allowLogging) + '</div>';
+}
+function setChartMatchType(t) { state.chartMatchType = t; render(); }
+async function logSessionScore(mode) {
+  const input = document.getElementById('sessionScoreInput_' + mode);
+  const val = parseFloat(input.value);
+  const shots = Number(state.chartMatchType);
+  const max = mode === 'decimal' ? MAX_DECIMAL[shots] : MAX_INTEGER[shots];
+  if (isNaN(val) || val < 0 || val > max) { alert('Please enter a score between 0 and ' + max.toFixed(1) + '.'); return; }
+  const scoreVal = mode === 'decimal' ? Math.round(val * 10) / 10 : Math.round(val);
+  const existing = scoresFor(state.me.id, shots, mode);
+  await sb.from('match_scores').insert({ student_id: state.me.id, shots, mode, session_label: 'M' + (existing.length + 1), score: scoreVal });
+  await loadScoresFor(state.me.id);
+  render();
+}
+
+// Calendar
+function typeColor(type) { return TYPE_COLORS[type] || 'var(--brass)'; }
+function calendarButton() { return '<button class="icon-btn" onclick="toggleCalendar()">' + icon('calendar', 18) + (state.cache.reminders.length ? '<span class="dot-badge"></span>' : '') + '</button>'; }
+function toggleCalendar() { state.calendarOpen = !state.calendarOpen; render(); }
+let lastCalWheelTime = 0;
+function handleCalWheel(e) {
+  e.preventDefault();
+  const now = Date.now();
+  if (now - lastCalWheelTime < 220) return;
+  lastCalWheelTime = now;
+  if (e.deltaY > 0) shiftCalendarMonth(1); else if (e.deltaY < 0) shiftCalendarMonth(-1);
+}
+function shiftCalendarMonth(delta) {
+  let year = state.calendarViewDate.year, month = state.calendarViewDate.month + delta;
+  if (month < 0) { month = 11; year--; } if (month > 11) { month = 0; year++; }
+  state.calendarViewDate = { year, month }; render();
+}
+function selectCalendarDate(iso) { state.selectedReminderDate = iso; state.addReminderOpen = true; render(); }
+function openAddReminderForDate() { state.addReminderOpen = !state.addReminderOpen; render(); }
+async function submitReminder() {
+  const title = document.getElementById('remTitle').value.trim();
+  const date = document.getElementById('remDate').value;
+  const type = document.getElementById('remType').value;
+  const venue = document.getElementById('remVenue').value.trim();
+  const notes = document.getElementById('remNotes').value.trim();
+  if (!title || !date) { alert('Please fill in the competition name and date.'); return; }
+  await sb.from('reminders').insert({ title, date, type, venue, notes, created_by: state.profile.id });
+  await fetchReminders();
+  state.addReminderOpen = false; state.selectedReminderDate = null; render();
+}
+async function deleteReminder(id) { await sb.from('reminders').delete().eq('id', id); await fetchReminders(); render(); }
+function monthCalendar() {
+  const year = state.calendarViewDate.year, month = state.calendarViewDate.month;
+  const firstDay = new Date(year, month, 1); const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthName = firstDay.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  const remindersByDay = {};
+  state.cache.reminders.forEach((r) => {
+    const d = new Date(r.date + 'T00:00:00');
+    if (d.getFullYear() === year && d.getMonth() === month) { remindersByDay[d.getDate()] = remindersByDay[d.getDate()] || []; remindersByDay[d.getDate()].push(r); }
+  });
+  const todayIso = new Date().toISOString().slice(0, 10);
+  let cells = '';
+  for (let i = 0; i < startWeekday; i++) cells += '<div class="cal-cell empty">·</div>';
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    const dots = (remindersByDay[day] || []).slice(0, 3).map((r) => '<span class="cal-dot" style="background:' + typeColor(r.type) + '"></span>').join('');
+    cells += '<div class="cal-cell' + (iso === todayIso ? ' today' : '') + (state.selectedReminderDate === iso ? ' selected' : '') + '" onclick="selectCalendarDate(\'' + iso + '\')"><span>' + day + '</span><div class="cal-dots">' + dots + '</div></div>';
+  }
+  return '<div onwheel="handleCalWheel(event)" title="Scroll to change month"><div class="cal-nav"><button class="icon-btn small" onclick="shiftCalendarMonth(-1)">' + icon('chevronLeft', 12) + '</button>' +
+    '<span class="eyebrow" style="font-size:11px">' + monthName + '</span><button class="icon-btn small" onclick="shiftCalendarMonth(1)">' + icon('chevronRight', 12) + '</button></div>' +
+    '<div class="cal-weekdays">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => '<div>' + d + '</div>').join('') + '</div><div class="cal-grid">' + cells + '</div>' +
+    '<div style="font-size:8.5px;color:var(--paper-dim);text-align:center;margin-top:3px">scroll ↑ ↓ to change month</div></div>';
+}
+function addReminderForm() {
+  const dateVal = state.selectedReminderDate || '';
+  return '<div style="margin-top:10px;border-top:1px dashed var(--line);padding-top:10px">' +
+    '<label class="field-label" style="margin-top:0">Competition / match name</label><input id="remTitle" class="text-input" placeholder="e.g. State Championship Trials" style="margin-bottom:6px"/>' +
+    '<label class="field-label">Date</label><input id="remDate" class="text-input" type="date" value="' + dateVal + '" style="margin-bottom:6px"/>' +
+    '<label class="field-label">Type</label><select id="remType" class="text-input" style="margin-bottom:6px">' + REMINDER_TYPES.map((t) => '<option>' + t + '</option>').join('') + '</select>' +
+    '<label class="field-label">Venue / location (optional)</label><input id="remVenue" class="text-input" placeholder="e.g. Dr. Karni Singh Range, Delhi" style="margin-bottom:6px"/>' +
+    '<label class="field-label">Notes (optional)</label><textarea id="remNotes" class="text-input" placeholder="Anything to remember" style="margin-bottom:8px;min-height:52px;resize:vertical;font-family:inherit"></textarea>' +
+    '<button class="btn-brass" onclick="submitReminder()">Save reminder</button></div>';
+}
+function calendarPopover(shooterCategory) {
+  if (!state.calendarOpen) return '';
+  const year = state.calendarViewDate.year, month = state.calendarViewDate.month;
+  const monthReminders = state.cache.reminders.filter((r) => { const d = new Date(r.date + 'T00:00:00'); return d.getFullYear() === year && d.getMonth() === month; }).sort((a, b) => a.date.localeCompare(b.date));
+  return '<div class="popover cal-popover"><div class="popover-head"><span class="eyebrow">Match calendar</span><button class="icon-btn small" onclick="toggleCalendar()">' + icon('x', 14) + '</button></div>' +
+    monthCalendar() +
+    '<div class="cal-legend">' + REMINDER_TYPES.map((t) => '<span class="legend-item"><span class="legend-dot" style="background:' + typeColor(t) + '"></span>' + t + '</span>').join('') + '</div>' +
+    (shooterCategory ? '<div style="font-size:9.5px;color:var(--paper-dim);margin-bottom:6px">Eligibility shown for your profile: <b style="color:var(--paper)">' + shooterCategory + ' shooter</b></div>' : '') +
+    '<div class="reminder-list">' + (monthReminders.length ? monthReminders.map((r) => {
+      const elig = shooterCategory ? eligibilityInfo(r.type, shooterCategory) : null;
+      const eligHtml = elig ? '<div style="margin-top:4px"><span class="elig-badge" style="--elig-color:' + (elig.ok === true ? 'var(--forest)' : 'var(--brass)') + '">' + (elig.ok === true ? 'Eligible' : 'Conditional') + '</span><div style="font-size:9px;color:var(--paper-dim);margin-top:2px;line-height:1.4">' + elig.note + '</div></div>' : '';
+      return '<div class="reminder-row" style="align-items:flex-start"><div style="display:flex;align-items:flex-start;gap:6px;min-width:0"><span class="legend-dot" style="background:' + typeColor(r.type) + ';margin-top:3px"></span><div style="min-width:0"><div style="font-weight:600;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + r.title + '</div><div style="font-size:9.5px;color:var(--paper-dim)">' + formatDate(r.date) + ' · ' + daysUntil(r.date) + '</div>' + (r.venue ? '<div style="font-size:9px;color:var(--paper-dim)">📍 ' + r.venue + '</div>' : '') + eligHtml + '</div></div><button class="icon-btn small" onclick="deleteReminder(' + r.id + ')">' + icon('x', 10) + '</button></div>';
+    }).join('') : '<div style="font-size:11.5px;color:var(--paper-dim);padding:4px 0">No reminders this month.</div>') + '</div>' +
+    '<button class="chip chip-active" style="width:100%;margin-top:8px;text-align:center" onclick="openAddReminderForDate()">+ Add reminder' + (state.selectedReminderDate ? ' for ' + formatDate(state.selectedReminderDate) : '') + '</button>' +
+    (state.addReminderOpen ? addReminderForm() : '') +
+    (shooterCategory ? '<div style="font-size:8.5px;color:var(--paper-dim);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);line-height:1.4">Simplified guide based on the NRAI Match Book — confirm current eligibility with your State Association.</div>' : '') + '</div>';
+}
+
+// Fees / payments / invoices
+function openPayment() { state.paymentOpen = true; render(); }
+function closePayment() { state.paymentOpen = false; render(); }
+function closePaymentIfOverlay(e) { if (e.target.classList.contains('modal-overlay')) closePayment(); }
+function closeFeeReminder() { state.feeReminderOpen = false; render(); }
+function closeFeeReminderIfOverlay(e) { if (e.target.classList.contains('modal-overlay')) closeFeeReminder(); }
+function closeFeeReminderAndPay() { state.feeReminderOpen = false; state.paymentOpen = true; render(); }
+async function generateInvoice(student, method) {
+  const invoiceNumber = 'INV-' + String(student.id).slice(0, 8).toUpperCase() + '-' + Date.now().toString().slice(-6);
+  const { data } = await sb.from('invoices').insert({
+    invoice_number: invoiceNumber, student_id: student.id, student_name: student.name,
+    email: student.email, category: student.category, amount: CATEGORIES[student.category].fee, method,
+  }).select().single();
+  return data;
+}
+async function payVia(method) {
+  if (method === 'Cash') {
+    await sb.from('students').update({ fee_status: 'CASH_PENDING' }).eq('id', state.me.id);
+    state.me.fee_status = 'CASH_PENDING'; state.paymentOpen = false; render(); return;
+  }
+  const card = document.querySelector('.modal-card');
+  if (card) card.innerHTML = '<div style="text-align:center;padding:26px 0"><div class="eyebrow">Processing via ' + method + '…</div></div>';
+  setTimeout(async () => {
+    await sb.from('students').update({ fee_status: 'PAID' }).eq('id', state.me.id);
+    state.me.fee_status = 'PAID';
+    const inv = await generateInvoice(state.me, method);
+    state.cache.myInvoices = await fetchMyInvoices(state.me.id);
+    state.paymentOpen = false; state.invoiceOpenId = inv.id;
+    render();
+    downloadInvoicePDF(inv);
+  }, 1000);
+}
+async function confirmCash(studentId) {
+  await sb.from('students').update({ fee_status: 'PAID' }).eq('id', studentId);
+  const student = state.cache.students.find((s) => s.id === studentId);
+  if (student) student.fee_status = 'PAID';
+  if (student) await generateInvoice(student, 'Cash');
+  await fetchStudents();
+  render();
+}
+function findInvoice(id) { return (state.cache.myInvoices || []).concat(state.cache.invoices || []).find((i) => i.id === id); }
+function closeInvoice() { state.invoiceOpenId = null; render(); }
+function closeInvoiceIfOverlay(e) { if (e.target.classList.contains('modal-overlay')) closeInvoice(); }
+function viewInvoice(id) { state.invoiceOpenId = id; render(); }
+function downloadInvoicePDF(inv) {
+  if (!inv) { inv = findInvoice(state.invoiceOpenId); }
+  if (!inv || !window.jspdf) { alert('PDF library is still loading — please try again in a moment.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a5' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const brass = [169, 121, 30], ink = [43, 33, 22], dim = [138, 124, 94], line = [227, 214, 180];
+  doc.setFillColor(243, 236, 217); doc.rect(0, 0, pageW, doc.internal.pageSize.getHeight(), 'F');
+  doc.setDrawColor(brass[0], brass[1], brass[2]); doc.setLineWidth(1.2); doc.rect(18, 18, pageW - 36, doc.internal.pageSize.getHeight() - 36);
+  doc.setTextColor(brass[0], brass[1], brass[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+  doc.text('RANGE LEDGER', pageW / 2, 52, { align: 'center' });
+  doc.setTextColor(dim[0], dim[1], dim[2]); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  doc.text('Precision Shooting Academy · Payment Receipt', pageW / 2, 66, { align: 'center' });
+  doc.setDrawColor(line[0], line[1], line[2]); doc.setLineWidth(0.7); doc.line(30, 82, pageW - 30, 82);
+  doc.setTextColor(ink[0], ink[1], ink[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  doc.text('Invoice ' + inv.invoice_number, 30, 104);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(dim[0], dim[1], dim[2]);
+  doc.text('Date: ' + new Date(inv.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), pageW - 30, 104, { align: 'right' });
+  const rows = [['Student', inv.student_name], ['Email', inv.email || '—'], ['Category', inv.category], ['Payment method', inv.method], ['Status', 'PAID']];
+  let y = 132; doc.setFontSize(10);
+  rows.forEach((r) => { doc.setTextColor(dim[0], dim[1], dim[2]); doc.text(r[0], 30, y); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text(String(r[1]), pageW - 30, y, { align: 'right' }); y += 20; });
+  doc.setDrawColor(line[0], line[1], line[2]); doc.line(30, y + 4, pageW - 30, y + 4); y += 28;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text('Amount paid', 30, y);
+  doc.setFontSize(16); doc.setTextColor(brass[0], brass[1], brass[2]); doc.text('Rs. ' + Number(inv.amount).toLocaleString('en-IN'), pageW - 30, y, { align: 'right' });
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(dim[0], dim[1], dim[2]);
+  doc.text('Thank you for training with Range Ledger. This is a system-generated receipt.', pageW / 2, doc.internal.pageSize.getHeight() - 30, { align: 'center' });
+  doc.save(inv.invoice_number + '.pdf');
+}
+function paymentModal(student) {
+  return '<div class="modal-overlay" onclick="closePaymentIfOverlay(event)"><div class="modal-card" onclick="event.stopPropagation()">' +
+    '<div class="eyebrow" style="margin-bottom:10px">Pay academy fee</div><div class="mono-lg" style="margin-bottom:14px">₹' + CATEGORIES[student.category].fee.toLocaleString('en-IN') + '</div>' +
+    '<button class="pay-option" onclick="payVia(\'UPI\')">' + icon('rupee', 18) + ' Pay via UPI</button>' +
+    '<button class="pay-option" onclick="payVia(\'Google Pay\')">' + icon('rupee', 18) + ' Pay via Google Pay</button>' +
+    '<button class="pay-option" onclick="payVia(\'Cash\')">' + icon('rupee', 18) + ' Pay with Cash (at academy)</button>' +
+    '<button class="chip" style="width:100%;margin-top:8px;text-align:center" onclick="closePayment()">Cancel</button></div></div>';
+}
+function feeReminderModal(student) {
+  const overdue = student.fee_status === 'OVERDUE';
+  return '<div class="modal-overlay" onclick="closeFeeReminderIfOverlay(event)"><div class="modal-card" onclick="event.stopPropagation()">' +
+    '<div class="eyebrow" style="margin-bottom:10px;color:' + (overdue ? 'var(--rust)' : 'var(--brass)') + '">' + icon('alert', 14) + ' Payment ' + (overdue ? 'overdue' : 'reminder') + '</div>' +
+    '<div style="font-size:13px;line-height:1.5;margin-bottom:16px">Hi ' + student.name.split(' ')[0] + ', your fee of <b>₹' + CATEGORIES[student.category].fee.toLocaleString('en-IN') + '</b> for <b>' + student.category + '</b> is <b>' + student.fee_status + '</b>' + (overdue ? ' — it was due ' + student.due_date : ', due ' + student.due_date) + '. Please clear it to avoid any disruption to your training.</div>' +
+    '<button class="btn-brass" onclick="closeFeeReminderAndPay()">Pay now</button>' +
+    '<button class="chip" style="width:100%;margin-top:8px;text-align:center" onclick="closeFeeReminder()">Remind me later</button></div></div>';
+}
+function invoiceModal(invoiceId) {
+  const inv = findInvoice(invoiceId);
+  if (!inv) return '';
+  return '<div class="modal-overlay" onclick="closeInvoiceIfOverlay(event)"><div class="modal-card receipt-card" onclick="event.stopPropagation()">' +
+    '<div style="text-align:center;margin-bottom:12px">' + icon('check', 26, 'var(--forest)') + '<div class="detail-name" style="margin-top:6px">Payment received</div>' +
+    '<div style="font-size:11px;color:var(--paper-dim)">Invoice ' + inv.invoice_number + '</div></div>' +
+    '<div class="receipt-row"><span>Student</span><span>' + inv.student_name + '</span></div>' +
+    (inv.email ? '<div class="receipt-row"><span>Sent to</span><span style="font-size:11px">' + inv.email + '</span></div>' : '') +
+    '<div class="receipt-row"><span>Category</span><span>' + inv.category + '</span></div>' +
+    '<div class="receipt-row"><span>Date</span><span>' + new Date(inv.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '</span></div>' +
+    '<div class="receipt-row"><span>Method</span><span>' + inv.method + '</span></div>' +
+    '<div class="receipt-row" style="border-top:1px dashed var(--line);margin-top:6px;padding-top:8px"><span style="font-weight:600">Amount paid</span><span class="mono-lg" style="font-size:18px">₹' + Number(inv.amount).toLocaleString('en-IN') + '</span></div>' +
+    '<button class="btn-brass" style="margin-top:14px" onclick="downloadInvoicePDF()">' + icon('rupee', 14) + ' Download PDF</button>' +
+    '<button class="chip" style="width:100%;margin-top:8px;text-align:center" onclick="closeInvoice()">Done</button></div></div>';
+}
+
+// Attendance
+async function markAttendance() {
+  const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+  const already = (state.cache.myAttendance || []).find((r) => r.requested_date === today && r.status === 'PENDING');
+  if (already) { alert('You already have a pending request for today.'); return; }
+  await sb.from('attendance_requests').insert({ student_id: state.me.id, requested_date: today, status: 'PENDING' });
+  const { data } = await sb.from('attendance_requests').select('*').eq('student_id', state.me.id);
+  state.cache.myAttendance = data || [];
+  render();
+}
+async function approveAttendance(reqId, approve) {
+  await sb.from('attendance_requests').update({ status: approve ? 'APPROVED' : 'REJECTED' }).eq('id', reqId);
+  await fetchAttendanceRequests();
+  render();
+}
+async function toggleNationalQualified(id) {
+  const s = state.cache.students.find((x) => x.id === id);
+  const next = !s.national_qualified;
+  await sb.from('students').update({ national_qualified: next }).eq('id', id);
+  s.national_qualified = next;
+  render();
+}
+async function openAdminDetail(id) {
+  state.adminDetailId = id; state.chartMatchType = '10';
+  await loadScoresFor(id);
+  const { data } = await sb.from('invoices').select('*').eq('student_id', id).order('paid_at', { ascending: false });
+  state.cache.detailInvoices = data || [];
+  render();
+}
+function closeAdminDetail() { state.adminDetailId = null; render(); }
+function closeDetailIfOverlay(e) { if (e.target.classList.contains('modal-overlay')) closeAdminDetail(); }
+
+// =============================================================================
+// Screens
+// =============================================================================
+function screenAuth() {
+  const tab = state.authTab;
+  return '<div class="splash target-watermark"><div class="brand-center">' + icon('crosshair', 40, 'var(--brass)') +
+    '<div class="brand-title" style="font-size:22px;margin-top:8px">Range Ledger</div><div class="brand-sub">Precision Shooting Academy</div></div>' +
+    '<div class="auth-tabs" style="margin-top:24px"><div class="auth-tab ' + (tab === 'signin' ? 'active' : '') + '" onclick="setAuthTab(\'signin\')">Sign in</div><div class="auth-tab ' + (tab === 'signup' ? 'active' : '') + '" onclick="setAuthTab(\'signup\')">Sign up</div></div>' +
+    (tab === 'signin' ? screenSignIn() : screenSignUp()) + '</div>';
+}
+function screenSignIn() {
+  return '<label class="field-label" style="margin-top:0">Email</label><input id="siEmail" class="text-input" type="email" placeholder="you@example.com"/>' +
+    '<label class="field-label">Password</label><input id="siPassword" class="text-input" type="password" placeholder="••••••••"/>' +
+    '<button class="btn-brass" style="margin-top:14px" onclick="submitSignIn()" ' + (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Signing in…' : 'Sign in') + '</button>';
+}
+function screenSignUp() {
+  const role = state.suRole || 'student';
+  return '<label class="field-label" style="margin-top:0">I am a…</label>' +
+    '<select id="suRole" class="text-input" onchange="state.suRole=this.value;render()"><option value="student"' + (role === 'student' ? ' selected' : '') + '>Student</option><option value="coach"' + (role === 'coach' ? ' selected' : '') + '>Coach</option><option value="admin"' + (role === 'admin' ? ' selected' : '') + '>Admin</option></select>' +
+    '<label class="field-label">Full name</label><input id="suName" class="text-input" placeholder="e.g. Rohan Mehta"/>' +
+    '<label class="field-label">Email</label><input id="suEmail" class="text-input" type="email" placeholder="you@example.com"/>' +
+    '<label class="field-label">Password</label><input id="suPassword" class="text-input" type="password" placeholder="At least 6 characters"/>' +
+    (role === 'student' ? (
+      '<label class="field-label">Mobile number</label><input id="suPhone" class="text-input" type="tel" placeholder="e.g. 98765 43210"/>' +
+      '<label class="field-label">Weapon</label><select id="suWeapon" class="text-input"><option>Air Rifle 10m</option><option>Air Pistol 10m</option></select>' +
+      '<label class="field-label">Shooter category</label><select id="suShooterCategory" class="text-input"><option value="ISSF">ISSF shooter</option><option value="NR">NR (National Rules) shooter</option></select>' +
+      '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:4px">Your fee invoices will be sent here and saved to your account for download anytime.</div>' +
+      '<label class="field-label">Passport size photo (max 1MB, optional)</label><input type="file" accept="image/*" class="text-input" onchange="handlePhotoSelect(event)"/>' +
+      (state.photoError ? '<div style="color:var(--rust);font-size:11px;margin-top:6px">' + state.photoError + '</div>' : '')
+    ) : role === 'coach' ? (
+      '<label class="field-label">Specialization</label><select id="suSpecialization" class="text-input"><option>Air Rifle 10m</option><option>Air Pistol 10m</option></select>'
+    ) : '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:4px">Admin signup is open here for demo purposes — restrict this in production (e.g. invite-only via the Supabase dashboard).</div>') +
+    '<button class="btn-brass" style="margin-top:14px" onclick="submitSignUp()" ' + (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Creating account…' : 'Create account') + '</button>';
+}
+function logoutButton() { return '<button class="icon-btn" onclick="logout()" title="Log out">' + icon('logout', 16) + '</button>'; }
+
+function accountMenuButton() { return '<button class="icon-btn" onclick="toggleAccountMenu()" title="Account">' + icon('menu', 18) + '</button>'; }
+function toggleAccountMenu() { state.accountMenuOpen = !state.accountMenuOpen; state.accountForm = null; render(); }
+function toggleAccountForm(which) { state.accountForm = state.accountForm === which ? null : which; render(); }
+function accountMenuPopover() {
+  if (!state.accountMenuOpen) return '';
+  return '<div class="popover" style="width:230px"><div class="popover-head"><span class="eyebrow">Account</span><button class="icon-btn small" onclick="toggleAccountMenu()">' + icon('x', 14) + '</button></div>' +
+    '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="toggleAccountForm(\'email\')">Change email</button>' +
+    (state.accountForm === 'email' ? accountEmailForm() : '') +
+    '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="toggleAccountForm(\'password\')">Change password</button>' +
+    (state.accountForm === 'password' ? accountPasswordForm() : '') +
+    '<button class="chip" style="width:100%;text-align:left" onclick="startNewAccount()">+ Create a new account</button>' +
+    '</div>';
+}
+function accountEmailForm() {
+  return '<div style="margin:2px 0 10px;padding:8px;background:var(--line-soft);border-radius:6px">' +
+    '<label class="field-label" style="margin-top:0">Current email</label>' +
+    '<input id="oldEmailInput" class="text-input" type="email" placeholder="your current email" style="margin-bottom:8px"/>' +
+    '<label class="field-label">New email</label>' +
+    '<input id="newEmailInput" class="text-input" type="email" placeholder="new@example.com" style="margin-bottom:8px"/>' +
+    '<button class="btn-brass" onclick="submitEmailChange()">Update email</button>' +
+    '<div style="font-size:9.5px;color:var(--paper-dim);margin-top:6px;line-height:1.4">You may need to confirm this from your inbox, depending on your project\'s email settings.</div></div>';
+}
+function accountPasswordForm() {
+  return '<div style="margin:2px 0 10px;padding:8px;background:var(--line-soft);border-radius:6px">' +
+    '<label class="field-label" style="margin-top:0">Current password</label>' +
+    '<input id="oldPasswordInput" class="text-input" type="password" placeholder="Your current password" style="margin-bottom:8px"/>' +
+    '<label class="field-label">New password</label>' +
+    '<input id="newPasswordInput" class="text-input" type="password" placeholder="At least 6 characters" style="margin-bottom:8px"/>' +
+    '<button class="btn-brass" onclick="submitPasswordChange()">Update password</button></div>';
+}
+async function submitEmailChange() {
+  const oldEmail = document.getElementById('oldEmailInput').value.trim();
+  const newEmail = document.getElementById('newEmailInput').value.trim();
+  if (!oldEmail || !newEmail) { alert('Please fill in both your current and new email.'); return; }
+  const currentEmail = (state.session && state.session.user && state.session.user.email) || '';
+  if (oldEmail.toLowerCase() !== currentEmail.toLowerCase()) { alert('That doesn\'t match the email on your account.'); return; }
+  if (!newEmail.includes('@')) { alert('Please enter a valid new email address.'); return; }
+  const { error } = await sb.auth.updateUser({ email: newEmail });
+  if (error) { alert('Could not update email: ' + error.message); return; }
+  alert('Check your inbox to confirm the email change.');
+  state.accountForm = null; state.accountMenuOpen = false; render();
+}
+async function submitPasswordChange() {
+  const oldPassword = document.getElementById('oldPasswordInput').value;
+  const newPassword = document.getElementById('newPasswordInput').value;
+  if (!oldPassword || !newPassword) { alert('Please fill in both your current and new password.'); return; }
+  if (newPassword.length < 6) { alert('New password must be at least 6 characters.'); return; }
+  const { error } = await sb.auth.updateUser({ password: newPassword, current_password: oldPassword });
+  if (error) { alert('Could not update password: ' + error.message); return; }
+  alert('Password updated.');
+  state.accountForm = null; state.accountMenuOpen = false; render();
+}
+async function startNewAccount() {
+  await logout();
+  state.authTab = 'signup';
+  render();
+}
+
+function loadErrorBanner() {
+  if (!state.loadError) return '';
+  return '<div class="load-error-banner"><span style="flex:1">' + state.loadError + '</span><button onclick="retryLoad()">Retry</button><button onclick="dismissLoadError()">Dismiss</button></div>';
+}
+function screenStudentDashboard() {
+  const student = state.me;
+  const pending = (state.cache.myAttendance || []).filter((r) => r.status === 'PENDING');
+  const log = (state.cache.myAttendance || []).filter((r) => r.status !== 'PENDING').sort((a, b) => b.id - a.id);
+  const myInvoices = state.cache.myInvoices || [];
+  return '<div class="app-topbar"><div style="display:flex;align-items:center;gap:8px">' + avatar(student, 36) +
+    '<div><div style="font-weight:600;font-size:13px">' + student.name + '</div><div style="font-size:10px;color:var(--paper-dim)">' + student.category + '</div></div></div>' +
+    '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + calendarPopover(student.shooter_category) + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
+    '<div class="screen-pad">' + loadErrorBanner() + '<div class="dashboard-grid">' +
+    '<div class="card"><div class="eyebrow" style="margin-bottom:8px">Fee status</div>' +
+    '<div class="mono-lg">₹' + CATEGORIES[student.category].fee.toLocaleString('en-IN') + '</div><div style="margin-bottom:10px">' + stamp(student.fee_status) + '</div>' +
+    (student.fee_status !== 'PAID' ? '<button class="btn-brass" onclick="openPayment()">Pay via UPI / Google Pay / Cash</button>' : '<div style="font-size:12px;color:var(--forest)">✓ Settled for this cycle</div>') +
+    (myInvoices.length ? '<div style="margin-top:10px;border-top:1px dashed var(--line);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + myInvoices.length + ')</div>' +
+      '<div style="max-height:150px;overflow-y:auto">' + myInvoices.map((i) => '<div class="log-row" style="padding:5px 0"><span style="cursor:pointer;font-size:11px;flex:1" onclick="viewInvoice(' + i.id + ')">' + i.invoice_number + '</span><span class="mono-sm" style="color:var(--paper-dim);margin-right:6px">' + new Date(i.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</span><button class="icon-btn small" onclick="viewInvoice(' + i.id + ')" title="View / download">' + icon('rupee', 10) + '</button></div>').join('') + '</div></div>' : '') + '</div>' +
+    '<div class="card"><div class="eyebrow" style="margin-bottom:10px">Attendance</div>' + ringGauge(student.attendance) +
+    '<button class="btn-brass" style="margin-top:12px" onclick="markAttendance()">Mark today\'s attendance</button>' +
+    (pending.length ? '<div style="font-size:11px;color:var(--brass);margin-top:8px;text-align:center">⏳ Pending your coach\'s approval</div>' : '') +
+    '<div class="logbook" style="margin-top:10px">' + (log.slice(0, 4).map((a) => '<div class="log-row"><span class="mono-sm">' + a.requested_date + '</span><span style="font-size:12px;flex:1">Attendance</span>' + attStamp(a.status) + '</div>').join('') || '<div style="font-size:12px;color:var(--paper-dim)">No attendance marked yet.</div>') + '</div></div>' +
+    '<div class="card span-2"><div class="eyebrow" style="margin-bottom:10px">Match performance</div>' + matchScoreSection(student.id, true) + '</div></div></div>' +
+    (state.paymentOpen ? paymentModal(student) : '') + (state.feeReminderOpen ? feeReminderModal(student) : '') + (state.invoiceOpenId ? invoiceModal(state.invoiceOpenId) : '');
+}
+
+function pathwayGroup(title, list, color) {
+  return '<div style="margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span class="eyebrow" style="font-size:10.5px">' + title + '</span><span class="mono-sm" style="color:' + color + '">' + list.length + '</span></div>' +
+    (list.length ? list.map((s) => '<div class="log-row" style="cursor:pointer;padding:4px 0" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-size:11.5px;flex:1">' + s.name + '</span></div>').join('') : '<div style="font-size:11px;color:var(--paper-dim)">None yet.</div>') + '</div>';
+}
+function screenCoachDashboard() {
+  const spec = state.me.specialization;
+  const myStudents = state.cache.students.filter((s) => s.category === spec);
+  const dueOrOverdue = myStudents.filter((s) => s.fee_status !== 'PAID');
+  const pendingReqs = state.cache.attendanceRequests.filter((r) => myStudents.some((s) => s.id === r.student_id) && r.status === 'PENDING');
+  const nationalQualified = myStudents.filter((s) => s.national_qualified);
+  const issfNotQualified = myStudents.filter((s) => s.shooter_category === 'ISSF' && !s.national_qualified);
+  const nrShooters = myStudents.filter((s) => s.shooter_category === 'NR');
+  return '<div class="app-topbar"><div style="display:flex;align-items:center;gap:8px"><div class="avatar-fallback" style="width:36px;height:36px">' + icon('target', 16) + '</div>' +
+    '<div><div style="font-weight:600;font-size:13px">Coach ' + state.me.name + '</div><div style="font-size:10px;color:var(--paper-dim)">' + spec + '</div></div></div>' +
+    '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + calendarPopover() + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
+    '<div class="screen-pad">' + loadErrorBanner() + '<div class="dashboard-grid">' +
+    '<div class="card" style="' + (pendingReqs.length ? 'border-color:var(--brass)' : '') + '"><div class="eyebrow" style="margin-bottom:10px">' + icon('bell', 12) + ' Attendance approvals</div>' +
+    (pendingReqs.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim)">No pending requests.</div>' :
+      pendingReqs.map((r) => { const st = state.cache.students.find((s) => s.id === r.student_id); return '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + (st ? st.name : '—') + '</span><span class="mono-sm" style="color:var(--paper-dim)">' + r.requested_date + '</span><button class="chip chip-active" style="padding:4px 8px" onclick="approveAttendance(' + r.id + ', true)">Approve</button><button class="chip" style="padding:4px 8px" onclick="approveAttendance(' + r.id + ', false)">Reject</button></div>'; }).join('')) + '</div>' +
+    '<div class="card" style="' + (dueOrOverdue.length ? 'border-color:var(--rust)' : '') + '"><div class="eyebrow" style="margin-bottom:10px">Your students — due or overdue</div>' +
+    (dueOrOverdue.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim)">All caught up.</div>' :
+      dueOrOverdue.map((s) => '<div class="log-row" style="cursor:pointer" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-weight:600;font-size:12px;flex:1">' + s.name + '</span><span class="mono-sm">Due ' + s.due_date + '</span>' + stamp(s.fee_status) + '</div>').join('')) + '</div>' +
+    '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">Shooter pathway (' + myStudents.length + ' students)</span></div><div class="card">' +
+      pathwayGroup('National Qualified', nationalQualified, 'var(--forest)') + pathwayGroup('ISSF — did not qualify Nationals yet', issfNotQualified, 'var(--brass)') + pathwayGroup('NR — new shooters', nrShooters, 'var(--rust)') + '</div></div>' +
+    '<div class="span-2"><div class="section-head"><span class="eyebrow">Your roster</span></div>' +
+    '<div class="card" style="padding:0;overflow:hidden"><table class="ledger"><thead><tr><th>Student</th><th>Attendance</th><th>Fee</th></tr></thead><tbody>' +
+    myStudents.map((s) => '<tr onclick="openAdminDetail(\'' + s.id + '\')"><td><div style="font-weight:600">' + s.name + '</div><div style="font-size:10.5px;color:var(--paper-dim)">' + s.batch + '</div></td><td><div class="mini-bar"><div class="mini-bar-fill" style="width:' + s.attendance + '%;background:' + (s.attendance >= 85 ? 'var(--forest)' : s.attendance >= 65 ? 'var(--brass)' : 'var(--rust)') + '"></div></div></td><td>' + stamp(s.fee_status) + '</td></tr>').join('') +
+    '</tbody></table></div></div></div></div>' + (state.adminDetailId ? studentDetailModal() : '');
+}
+
+function studentDetailModal() {
+  const s = state.cache.students.find((x) => x.id === state.adminDetailId);
+  if (!s) return '';
+  const invs = state.cache.detailInvoices || [];
+  return '<div class="modal-overlay" onclick="closeDetailIfOverlay(event)"><div class="modal-card" style="max-width:340px;text-align:left" onclick="event.stopPropagation()">' +
+    '<button class="back-btn" onclick="closeAdminDetail()">' + icon('chevronLeft', 14) + ' Close</button>' +
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' + avatar(s, 46) + '<div><div class="detail-name" style="font-size:15px">' + s.name + '</div><div style="font-size:11px;color:var(--paper-dim)">' + s.category + ' · ' + s.batch + '</div></div></div>' +
+    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:10px;line-height:1.6">' + (s.phone ? '📱 ' + s.phone + '<br/>' : '') + (s.email ? '✉️ ' + s.email : '') + '</div>' +
+    '<div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + stamp(s.fee_status) +
+    (s.fee_status === 'CASH_PENDING' ? '<button class="chip chip-active" onclick="confirmCash(\'' + s.id + '\')">Confirm cash</button>' : '') +
+    (s.shooter_category ? '<span class="chip" style="cursor:default">' + s.shooter_category + ' shooter</span>' : '') +
+    '<button class="chip ' + (s.national_qualified ? 'chip-active' : '') + '" onclick="toggleNationalQualified(\'' + s.id + '\')">' + (s.national_qualified ? '✓ National Qualified' : 'Mark National Qualified') + '</button></div>' +
+    (invs.length ? '<div style="margin-bottom:12px;border-top:1px dashed var(--line);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + invs.length + ')</div>' +
+      '<div style="max-height:120px;overflow-y:auto">' + invs.map((i) => '<div class="log-row" style="padding:5px 0"><span style="cursor:pointer;font-size:11px;flex:1" onclick="viewInvoice(' + i.id + ')">' + i.invoice_number + '</span><span class="mono-sm" style="color:var(--paper-dim)">' + new Date(i.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</span></div>').join('') + '</div></div>' : '') +
+    ringGauge(s.attendance, 60) + '<div style="margin-top:14px">' + matchScoreSection(s.id, false) + '</div></div></div>' +
+    (state.invoiceOpenId ? invoiceModal(state.invoiceOpenId) : '');
+}
+
+function screenAdminDashboard() {
+  const students = state.cache.students;
+  const dueOrOverdue = students.filter((s) => s.fee_status !== 'PAID');
+  const totalRevenue = students.filter((s) => s.fee_status === 'PAID').reduce((sum, s) => sum + CATEGORIES[s.category].fee, 0);
+  const avgAttendance = students.length ? Math.round(students.reduce((sum, s) => sum + s.attendance, 0) / students.length) : 0;
+  return '<div class="app-topbar"><div style="display:flex;align-items:center;gap:8px">' + icon('crosshair', 22, 'var(--brass)') +
+    '<div><div style="font-weight:600;font-size:13px">Admin</div><div style="font-size:10px;color:var(--paper-dim)">Full academy overview</div></div></div>' +
+    '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + calendarPopover() + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
+    '<div class="screen-pad">' + loadErrorBanner() + '<div class="stat-row-2">' +
+    '<div class="statcard"><div class="statcard-icon">' + icon('user', 15) + '</div><div><div class="statcard-value">' + students.length + '</div><div class="eyebrow">Students</div></div></div>' +
+    '<div class="statcard"><div class="statcard-icon">' + icon('rupee', 15) + '</div><div><div class="statcard-value">₹' + totalRevenue.toLocaleString('en-IN') + '</div><div class="eyebrow">Revenue</div></div></div>' +
+    '<div class="statcard"><div class="statcard-icon">' + icon('bell', 15) + '</div><div><div class="statcard-value">' + dueOrOverdue.length + '</div><div class="eyebrow">Dues</div></div></div>' +
+    '<div class="statcard"><div class="statcard-icon">' + icon('calendar', 15) + '</div><div><div class="statcard-value">' + avgAttendance + '%</div><div class="eyebrow">Avg attend.</div></div></div></div>' +
+    '<div class="dashboard-grid" style="margin:14px 0">' +
+    '<div class="card" style="' + (dueOrOverdue.length ? 'border-color:var(--rust)' : '') + '"><div class="eyebrow" style="margin-bottom:8px">All students — due or overdue</div>' +
+    (dueOrOverdue.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim)">All caught up.</div>' :
+      dueOrOverdue.map((s) => '<div class="log-row" style="cursor:pointer" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-weight:600;font-size:12px;flex:1">' + s.name + '</span><span class="mono-sm">Due ' + s.due_date + '</span>' + stamp(s.fee_status) + '</div>').join('')) + '</div>' +
+    '<div class="card"><div class="eyebrow" style="margin-bottom:8px">Coaches</div>' +
+    (state.cache.coaches.length ? state.cache.coaches.map((c) => '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + c.name + '</span><span style="font-size:11px;color:var(--paper-dim)">' + c.specialization + '</span></div>').join('') : '<div style="font-size:12px;color:var(--paper-dim)">No coaches signed up yet.</div>') + '</div>' +
+    '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">All students</span></div>' +
+    '<div class="card" style="padding:0;overflow:hidden"><table class="ledger"><thead><tr><th>Student</th><th>Category</th><th>Attend.</th><th>Fee</th></tr></thead><tbody>' +
+    (students.length ? students.map((s) => '<tr onclick="openAdminDetail(\'' + s.id + '\')"><td><div style="font-weight:600">' + s.name + '</div></td><td style="color:' + CATEGORIES[s.category].color + '">' + s.category + '</td><td><div class="mini-bar"><div class="mini-bar-fill" style="width:' + s.attendance + '%;background:' + (s.attendance >= 85 ? 'var(--forest)' : s.attendance >= 65 ? 'var(--brass)' : 'var(--rust)') + '"></div></div></td><td>' + stamp(s.fee_status) + '</td></tr>').join('') : '<tr><td colspan="4" style="padding:16px;color:var(--paper-dim)">No students signed up yet.</td></tr>') +
+    '</tbody></table></div></div>' +
+    '<div class="span-2"><div class="section-head"><span class="eyebrow">All invoices (' + state.cache.invoices.length + ')</span></div>' +
+    '<div class="card" style="padding:0;overflow:hidden">' + (state.cache.invoices.length === 0 ? '<div style="padding:16px;font-size:12px;color:var(--paper-dim)">No payments recorded yet.</div>' :
+    '<table class="ledger"><thead><tr><th>Invoice</th><th>Student</th><th>Amount</th><th>Method</th><th>Date</th></tr></thead><tbody>' +
+    state.cache.invoices.map((i) => '<tr onclick="viewInvoice(' + i.id + ')"><td class="mono-sm">' + i.invoice_number + '</td><td style="font-weight:600">' + i.student_name + '</td><td>₹' + Number(i.amount).toLocaleString('en-IN') + '</td><td style="font-size:10.5px;color:var(--paper-dim)">' + i.method + '</td><td style="font-size:10.5px;color:var(--paper-dim)">' + new Date(i.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</td></tr>').join('') + '</tbody></table>') + '</div></div>' +
+    '<div class="span-2"><div class="section-head"><span class="eyebrow">Fee structure</span></div><div class="fee-grid-2">' +
+    Object.entries(CATEGORIES).map(([name, meta]) => '<div class="card fee-card">' + icon('target', 15, meta.color) + '<div style="flex:1"><div style="font-weight:600;font-size:12.5px">' + name + '</div><div style="font-size:10.5px;color:var(--paper-dim)">per month</div></div><div class="mono-lg" style="font-size:15px">₹' + meta.fee.toLocaleString('en-IN') + '</div></div>').join('') +
+    '</div></div></div></div>' + (state.adminDetailId ? studentDetailModal() : '');
+}
+
+function screenLoading() {
+  return '<div class="splash target-watermark" style="text-align:center"><div class="brand-center pulse-loading">' + icon('crosshair', 36, 'var(--brass)') +
+    '<div class="eyebrow" style="margin-top:14px">Loading…</div></div></div>';
+}
+
+function App() {
+  switch (state.screen) {
+    case 'LOADING': return screenLoading();
+    case 'AUTH': return screenAuth();
+    case 'STUDENT_DASHBOARD': return screenStudentDashboard();
+    case 'COACH_DASHBOARD': return screenCoachDashboard();
+    case 'ADMIN_DASHBOARD': return screenAdminDashboard();
+    default: return screenAuth();
+  }
+}
+
+render();
+try {
+  boot().catch((err) => {
+    document.getElementById('root').innerHTML =
+      '<div class="screen-pad" style="text-align:center;padding-top:60px"><div class="eyebrow" style="color:var(--rust);margin-bottom:8px">Something went wrong on load</div>' +
+      '<div style="font-size:12px;color:var(--paper-dim);margin-bottom:16px">' + (err && err.message ? err.message : String(err)) + '</div>' +
+      '<button class="btn-brass" style="max-width:200px;margin:0 auto" onclick="location.reload()">Reload</button></div>';
+  });
+} catch (err) {
+  document.getElementById('root').innerHTML =
+    '<div class="screen-pad" style="text-align:center;padding-top:60px"><div class="eyebrow" style="color:var(--rust);margin-bottom:16px">Something went wrong on load</div>' +
+    '<button class="btn-brass" style="max-width:200px;margin:0 auto" onclick="location.reload()">Reload</button></div>';
+}
+</script>
+</body>
+</html>
