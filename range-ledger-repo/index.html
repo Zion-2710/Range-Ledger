@@ -57,11 +57,17 @@
   .target-watermark::before {
     content: ''; position: absolute; top: -70px; left: 50%; transform: translateX(-50%);
     width: 360px; height: 360px; border-radius: 50%; pointer-events: none;
-    background:
-      radial-gradient(circle, rgba(181,67,43,0.55) 0 6px, transparent 6px 7px),
-      repeating-radial-gradient(circle, rgba(181,67,43,0.22) 0px, rgba(181,67,43,0.22) 3px, transparent 3px, transparent 30px);
+    background: repeating-radial-gradient(circle, rgba(181,67,43,0.22) 0px, rgba(181,67,43,0.22) 3px, transparent 3px, transparent 30px);
   }
   .target-watermark > * { position: relative; z-index: 1; }
+  .brand-icon-ring { position: relative; display: inline-flex; }
+  .brand-icon-ring::before {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 92px; height: 92px; border-radius: 50%; pointer-events: none; z-index: -1;
+    background:
+      radial-gradient(circle, rgba(181,67,43,0.6) 0 6px, transparent 6px 7px),
+      repeating-radial-gradient(circle, rgba(181,67,43,0.28) 0px, rgba(181,67,43,0.28) 3px, transparent 3px, transparent 16px);
+  }
   .brand-center { text-align: center; }
   .pulse-loading { animation: pulseFade 1.4s ease-in-out infinite; }
   @keyframes pulseFade { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
@@ -1156,8 +1162,8 @@ function closeDetailIfOverlay(e) { if (e.target.classList.contains('modal-overla
 // =============================================================================
 function screenAuth() {
   const tab = state.authTab;
-  return '<div class="splash target-watermark"><div class="brand-center">' + icon('crosshair', 40, 'var(--brass)') +
-    '<div class="brand-title" style="font-size:22px;margin-top:8px">Range Ledger</div><div class="brand-sub">Precision Shooting Academy</div></div>' +
+  return '<div class="splash target-watermark"><div class="brand-center"><span class="brand-icon-ring">' + icon('crosshair', 40, 'var(--brass)') + '</span>' +
+    '<div class="brand-title" style="font-size:22px;margin-top:8px">Range Ledger</div></div>' +
     '<div class="auth-card">' +
     '<div class="auth-tabs"><div class="auth-tab ' + (tab === 'signin' ? 'active' : '') + '" onclick="setAuthTab(\'signin\')">Sign in</div><div class="auth-tab ' + (tab === 'signup' ? 'active' : '') + '" onclick="setAuthTab(\'signup\')">Sign up</div></div>' +
     (tab === 'signin' ? screenSignIn() : screenSignUp()) + '</div></div>';
@@ -1444,7 +1450,7 @@ function screenAdminDashboard() {
 }
 
 function screenLoading() {
-  return '<div class="splash target-watermark" style="text-align:center"><div class="brand-center pulse-loading">' + icon('crosshair', 36, 'var(--brass)') +
+  return '<div class="splash target-watermark" style="text-align:center"><div class="brand-center pulse-loading"><span class="brand-icon-ring">' + icon('crosshair', 36, 'var(--brass)') + '</span>' +
     '<div class="eyebrow" style="margin-top:14px">Loading…</div></div></div>';
 }
 
