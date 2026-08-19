@@ -1,0 +1,39 @@
+-- =============================================================================
+-- Let students request items from their coach's inventory (not just have
+-- items pushed to them), and enable Realtime so changes made in one tab
+-- (e.g. a student marking attendance, or a coach confirming a payment)
+-- show up live in another tab without a manual refresh.
+-- =============================================================================
+
+-- Tracks whether an issue is just a student's request awaiting approval,
+-- an approved/given item, or a declined request. Existing rows (all
+-- created by the coach's direct "give to student" flow) default to
+-- 'issued', which is correct for them.
+alter table inventory_issues add column if not exists status text not null default 'issued';
+
+-- Students can now create their own request rows (status='issued' is only
+-- ever set by the coach approving one — enforced in the app, not RLS, to
+-- keep this simple).
+drop policy if exists "issues insert by requesting student" on inventory_issues;
+create policy "issues insert by requesting student" on inventory_issues for insert with check (student_id = auth.uid());
+
+-- Realtime: add each table to the publication only if it isn't already
+-- there, so this migration is safe to rerun.
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'attendance_requests') then
+    alter publication supabase_realtime add table public.attendance_requests;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'inventory_issues') then
+    alter publication supabase_realtime add table public.inventory_issues;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'inventory_items') then
+    alter publication supabase_realtime add table public.inventory_items;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'students') then
+    alter publication supabase_realtime add table public.students;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'invoices') then
+    alter publication supabase_realtime add table public.invoices;
+  end if;
+end $$;
