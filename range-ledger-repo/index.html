@@ -54,19 +54,13 @@
   .app-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
   .screen-pad { padding: 16px; }
   .splash { padding: 50px 20px 20px; position: relative; overflow: hidden; }
-  .target-watermark::before {
-    content: ''; position: absolute; top: -70px; left: 50%; transform: translateX(-50%);
-    width: 360px; height: 360px; border-radius: 50%; pointer-events: none;
-    background: repeating-radial-gradient(circle, rgba(181,67,43,0.22) 0px, rgba(181,67,43,0.22) 3px, transparent 3px, transparent 30px);
-  }
-  .target-watermark > * { position: relative; z-index: 1; }
   .brand-icon-ring { position: relative; display: inline-flex; }
   .brand-icon-ring::before {
     content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 92px; height: 92px; border-radius: 50%; pointer-events: none; z-index: -1;
+    width: 420px; height: 420px; border-radius: 50%; pointer-events: none;
     background:
       radial-gradient(circle, rgba(181,67,43,0.6) 0 6px, transparent 6px 7px),
-      repeating-radial-gradient(circle, rgba(181,67,43,0.28) 0px, rgba(181,67,43,0.28) 3px, transparent 3px, transparent 16px);
+      repeating-radial-gradient(circle, rgba(181,67,43,0.22) 0px, rgba(181,67,43,0.22) 3px, transparent 3px, transparent 26px);
   }
   .brand-center { text-align: center; }
   .pulse-loading { animation: pulseFade 1.4s ease-in-out infinite; }
