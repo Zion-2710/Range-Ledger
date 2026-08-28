@@ -1,0 +1,37 @@
+# Supabase CLI / GitHub-integration config for this project.
+#
+# This file is safe to commit — by default it holds no secrets (your project
+# URL and anon key stay in the app's HTML file / your own env vars, not here).
+#
+# `project_id` links this repo to your specific Supabase project so the
+# GitHub integration (and the CLI, if you use it) knows where to deploy
+# migrations. Find yours in the dashboard URL:
+#   https://supabase.com/dashboard/project/<project-id>
+# Replace the placeholder below with that value.
+project_id = "YOUR_PROJECT_ID"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+[storage]
+enabled = true
+
+# -----------------------------------------------------------------------
+# Note: if you ever run the Supabase CLI locally, running `supabase link`
+# will overwrite this file with a fully correct, CLI-generated version —
+# that's the most reliable way to keep it accurate. This hand-written copy
+# is enough for the GitHub integration's "deploy migrations on push" flow.
+# -----------------------------------------------------------------------

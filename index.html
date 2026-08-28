@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Range Ledger — Shooting Academy</title>
 <meta name="description" content="Manage your shooting academy — fees, invoices, attendance approval, match calendar, and performance tracking for students, coaches, and admins." />
-<meta name="theme-color" content="#F3ECD9" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A9791E' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cline x1='12' y1='1' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='1' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='23' y2='12'/%3E%3C/svg%3E" />
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23F3ECD9' stroke='%23A9791E' stroke-width='1.6' stroke-linecap='round'%3E%3Crect width='24' height='24' rx='5' fill='%23F3ECD9'/%3E%3Ccircle cx='12' cy='12' r='7.5'/%3E%3Cline x1='12' y1='3' x2='12' y2='6'/%3E%3Cline x1='12' y1='18' x2='12' y2='21'/%3E%3Cline x1='3' y1='12' x2='6' y2='12'/%3E%3Cline x1='18' y1='12' x2='21' y2='12'/%3E%3C/svg%3E" />
+<meta name="theme-color" content="#EAF2FB" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231D6FE0' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cline x1='12' y1='1' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='1' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='23' y2='12'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23EAF2FB' stroke='%231D6FE0' stroke-width='1.6' stroke-linecap='round'%3E%3Crect width='24' height='24' rx='5' fill='%23EAF2FB'/%3E%3Ccircle cx='12' cy='12' r='7.5'/%3E%3Cline x1='12' y1='3' x2='12' y2='6'/%3E%3Cline x1='12' y1='18' x2='12' y2='21'/%3E%3Cline x1='3' y1='12' x2='6' y2='12'/%3E%3Cline x1='18' y1='12' x2='21' y2='12'/%3E%3C/svg%3E" />
 <link rel="manifest" href="manifest.json" />
 <meta property="og:title" content="Range Ledger — Shooting Academy" />
 <meta property="og:description" content="Fees, invoices, attendance, match calendar, and performance tracking for a precision shooting academy." />
@@ -16,9 +16,9 @@
   @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
   :root {
-    --bg: #F3ECD9; --ink: #FDFAF1; --paper: #2B2116; --paper-dim: #8A7C5E;
-    --brass: #A9791E; --olive: #5F7043; --forest: #3F7A52; --rust: #B5432B;
-    --line: #E3D6B4; --line-soft: #ECE0C2;
+    --bg: #EAF2FB; --ink: #FFFFFF; --paper: #12233F; --paper-dim: #64789A;
+    --brass: #1D6FE0; --warning: #D9A62E; --olive: #3D6EA8; --forest: #2E8B57; --rust: #C0392B;
+    --line: #D3E3F5; --line-soft: #E4EEFA; --line-strong: #7FA8D9;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); font-family: 'IBM Plex Sans', sans-serif; color: var(--paper); position: relative; }
@@ -26,19 +26,19 @@
   .bg-target {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background:
-      radial-gradient(circle at 18% 22%, rgba(43,33,22,0.28) 0 3px, transparent 3px 4.5px),
-      radial-gradient(circle at 83% 16%, rgba(43,33,22,0.24) 0 2.5px, transparent 2.5px 4px),
-      radial-gradient(circle at 72% 82%, rgba(43,33,22,0.26) 0 3px, transparent 3px 4.5px),
-      radial-gradient(circle at 10% 78%, rgba(43,33,22,0.22) 0 2.5px, transparent 2.5px 4px),
-      radial-gradient(circle at 90% 58%, rgba(43,33,22,0.24) 0 2.5px, transparent 2.5px 4px),
-      radial-gradient(circle at 50% 34%, rgba(181,67,43,0.55) 0 7px, transparent 7px 8px),
-      repeating-radial-gradient(circle at 50% 34%, rgba(181,67,43,0.20) 0px, rgba(181,67,43,0.20) 3px, transparent 3px, transparent 42px),
-      repeating-radial-gradient(circle at 50% 34%, rgba(43,33,22,0.06) 0px, rgba(43,33,22,0.06) 1px, transparent 1px, transparent 42px);
+      radial-gradient(circle at 18% 22%, rgba(15,35,70,0.28) 0 3px, transparent 3px 4.5px),
+      radial-gradient(circle at 83% 16%, rgba(15,35,70,0.24) 0 2.5px, transparent 2.5px 4px),
+      radial-gradient(circle at 72% 82%, rgba(15,35,70,0.26) 0 3px, transparent 3px 4.5px),
+      radial-gradient(circle at 10% 78%, rgba(15,35,70,0.22) 0 2.5px, transparent 2.5px 4px),
+      radial-gradient(circle at 90% 58%, rgba(15,35,70,0.24) 0 2.5px, transparent 2.5px 4px),
+      radial-gradient(circle at 50% 34%, rgba(29,111,224,0.55) 0 7px, transparent 7px 8px),
+      repeating-radial-gradient(circle at 50% 34%, rgba(29,111,224,0.20) 0px, rgba(29,111,224,0.20) 3px, transparent 3px, transparent 42px),
+      repeating-radial-gradient(circle at 50% 34%, rgba(15,35,70,0.06) 0px, rgba(15,35,70,0.06) 1px, transparent 1px, transparent 42px);
   }
   .phone { position: relative; z-index: 1; }
 
   .config-banner { background: #B5432B; color: #fff; font-size: 12px; padding: 10px 16px; text-align: center; font-family: 'IBM Plex Mono', monospace; position: relative; z-index: 2; }
-  .load-error-banner { background: rgba(181,67,43,0.12); border: 1px solid var(--rust); color: var(--rust); border-radius: 6px; padding: 10px 12px; font-size: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .load-error-banner { background: rgba(29,111,224,0.12); border: 1px solid var(--rust); color: var(--rust); border-radius: 6px; padding: 10px 12px; font-size: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
   .load-error-banner button { font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.04em; background: none; border: 1px solid var(--rust); color: var(--rust); border-radius: 5px; padding: 4px 8px; cursor: pointer; }
   .config-banner code { background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 3px; }
 
@@ -48,34 +48,32 @@
   }
   .status-bar { display: flex; justify-content: space-between; padding: 8px 18px 0; font-size: 11px; color: var(--paper-dim); font-family: 'IBM Plex Mono', monospace; }
 
-  .eyebrow { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.08em; font-size: 11.5px; color: var(--paper-dim); }
-  .section-head { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 10px; }
+  .eyebrow { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.07em; font-size: 11.5px; font-weight: 700; color: var(--paper); }
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--line-strong); }
 
   .app-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
   .screen-pad { padding: 16px; }
   .splash { padding: 50px 20px 20px; position: relative; overflow: hidden; }
-  .target-watermark::before {
-    content: ''; position: absolute; top: -70px; left: 50%; transform: translateX(-50%);
-    width: 360px; height: 360px; border-radius: 50%; pointer-events: none;
+  .brand-icon-ring { position: relative; display: inline-flex; }
+  .brand-icon-ring::before {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 420px; height: 420px; border-radius: 50%; pointer-events: none;
     background:
-      radial-gradient(circle, rgba(181,67,43,0.55) 0 6px, transparent 6px 7px),
-      repeating-radial-gradient(circle, rgba(181,67,43,0.22) 0px, rgba(181,67,43,0.22) 3px, transparent 3px, transparent 30px);
+      radial-gradient(circle, rgba(29,111,224,0.6) 0 6px, transparent 6px 7px),
+      repeating-radial-gradient(circle, rgba(29,111,224,0.22) 0px, rgba(29,111,224,0.22) 3px, transparent 3px, transparent 26px);
   }
-  .target-watermark > * { position: relative; z-index: 1; }
   .brand-center { text-align: center; }
   .pulse-loading { animation: pulseFade 1.4s ease-in-out infinite; }
   @keyframes pulseFade { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-  .brand-title { font-family: 'Oswald', sans-serif; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+  .brand-title { font-family: 'Oswald', sans-serif; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--brass); }
   .brand-sub { font-size: 12px; color: var(--paper-dim); margin-top: 2px; }
 
   .auth-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
-  .auth-tab { flex: 1; text-align: center; padding: 9px; border-radius: 6px; border: 1px solid var(--line); background: var(--ink); color: var(--paper-dim); font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.05em; cursor: pointer; }
-  .auth-tab.active { border-color: var(--brass); color: var(--brass); font-weight: 600; }
 
   .role-card { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 10px; color: var(--paper); cursor: pointer; text-align: left; }
   .role-card:hover { border-color: var(--brass); }
 
-  .field-label { display: block; font-size: 11px; color: var(--paper-dim); margin: 10px 0 4px; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; }
+  .field-label { display: block; font-size: 11px; font-weight: 700; color: var(--brass); margin: 10px 0 4px; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; }
   .text-input { width: 100%; background: var(--ink); border: 1px solid var(--line); color: var(--paper); border-radius: 6px; padding: 9px 10px; font-size: 13px; font-family: 'IBM Plex Sans', sans-serif; }
   select.text-input { appearance: none; }
 
@@ -91,20 +89,20 @@
   .popover.cal-popover { width: 292px; }
   .popover-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .reminder-list { display: flex; flex-direction: column; gap: 2px; max-height: 150px; overflow: auto; }
-  .reminder-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .reminder-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 2px dashed var(--line-strong); }
   .reminder-row:last-child { border-bottom: none; }
 
   .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 9.5px; color: var(--paper-dim); margin-bottom: 4px; font-family: 'IBM Plex Mono', monospace; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
   .cal-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; font-size: 10.5px; font-family: 'IBM Plex Mono', monospace; color: var(--paper); }
-  .cal-cell:hover { background: rgba(201,162,75,0.14); }
+  .cal-cell:hover { background: rgba(29,111,224,0.14); }
   .cal-cell.empty { cursor: default; visibility: hidden; }
   .cal-cell.today { border: 1px solid var(--brass); }
   .cal-cell.selected { background: var(--brass); color: var(--ink); font-weight: 600; }
   .cal-dots { display: flex; gap: 2px; margin-top: 1px; height: 4px; }
   .cal-dot { width: 4px; height: 4px; border-radius: 50%; }
-  .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 8px 0; padding-top: 8px; border-top: 1px dashed var(--line); }
+  .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 8px 0; padding-top: 8px; border-top: 2px dashed var(--line-strong); }
   .elig-badge { display: inline-block; font-family: 'Oswald', sans-serif; font-size: 8.5px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600; color: var(--elig-color); border: 1px solid var(--elig-color); border-radius: 3px; padding: 1px 5px; }
   .legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--paper-dim); }
   .legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
@@ -120,14 +118,14 @@
   .card { background: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
   .stat-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .statcard { background: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
-  .statcard-icon { width: 30px; height: 30px; border-radius: 6px; background: rgba(201,162,75,0.12); color: var(--brass); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .statcard-icon { width: 30px; height: 30px; border-radius: 6px; background: rgba(29,111,224,0.12); color: var(--brass); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .statcard-value { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 16px; }
   .fee-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .fee-card { display: flex; align-items: center; gap: 8px; padding: 12px; }
 
   .mono-lg { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 20px; margin-bottom: 4px; }
   .mono-sm { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--brass); }
-  .detail-name { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; }
+  .detail-name { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 17px; }
 
   .toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .chip { font-family: 'Oswald', sans-serif; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--ink); color: var(--paper-dim); cursor: pointer; }
@@ -139,7 +137,7 @@
   .logbook { display: flex; flex-direction: column; }
   .analysis-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 10px 0; padding: 8px; background: var(--line-soft); border-radius: 6px; }
   .analysis-cell { text-align: center; }
-  .log-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .log-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 2px dashed var(--line-strong); }
   .log-row:last-child { border-bottom: none; }
 
   .ledger { width: 100%; border-collapse: collapse; }
@@ -147,7 +145,7 @@
   .ledger td { padding: 10px 12px; border-bottom: 1px solid var(--line-soft); font-size: 12px; }
   .ledger tr:last-child td { border-bottom: none; }
   .ledger tbody tr { cursor: pointer; }
-  .ledger tbody tr:hover { background: rgba(201,162,75,0.06); }
+  .ledger tbody tr:hover { background: rgba(29,111,224,0.06); }
 
   .mini-bar { width: 60px; height: 6px; background: var(--line-soft); border-radius: 3px; overflow: hidden; }
   .mini-bar-fill { height: 100%; border-radius: 3px; }
@@ -159,7 +157,7 @@
 
   /* Toasts */
   .toast-stack { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 8px; width: min(340px, calc(100% - 28px)); pointer-events: none; }
-  .toast { pointer-events: auto; background: var(--ink); border: 1px solid var(--line); border-left: 4px solid var(--brass); border-radius: 7px; padding: 10px 12px; font-size: 12.5px; box-shadow: 0 10px 28px rgba(43,33,22,0.22); display: flex; align-items: flex-start; gap: 8px; animation: toast-in 0.25s ease; }
+  .toast { pointer-events: auto; background: var(--ink); border: 1px solid var(--line); border-left: 4px solid var(--brass); border-radius: 7px; padding: 10px 12px; font-size: 12.5px; box-shadow: 0 10px 28px rgba(15,35,70,0.22); display: flex; align-items: flex-start; gap: 8px; animation: toast-in 0.25s ease; }
   .toast.success { border-left-color: var(--forest); }
   .toast.error { border-left-color: var(--rust); }
   .toast-close { background: none; border: none; color: var(--paper-dim); cursor: pointer; padding: 0; margin-left: auto; flex-shrink: 0; }
@@ -181,27 +179,50 @@
   .password-toggle:hover { color: var(--brass); }
 
   /* General interactivity polish */
-  .btn-brass, .chip, .role-card, .pay-option, .icon-btn, .photo-upload-btn { transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, filter 0.12s ease; }
-  .btn-brass:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(169,121,30,0.3); }
+  .btn-brass, .chip, .role-card, .pay-option, .icon-btn, .photo-upload-btn { transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, filter 0.12s ease, background 0.12s ease; }
+  .btn-brass:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29,111,224,0.3); }
   .btn-brass:active:not(:disabled) { transform: translateY(0); }
-  .role-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(43,33,22,0.08); }
-  .card { transition: box-shadow 0.15s ease; }
+  .role-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(15,35,70,0.08); }
+  .card, .statcard { box-shadow: 0 1px 2px rgba(15,35,70,0.04), 0 2px 8px rgba(15,35,70,0.05); transition: box-shadow 0.15s ease, transform 0.15s ease; }
+  .chip:hover { border-color: var(--brass); color: var(--brass); }
+  .icon-btn:hover { border-color: var(--brass); color: var(--brass); background: rgba(29,111,224,0.08); }
+  .text-input { transition: border-color 0.12s ease, box-shadow 0.12s ease; }
+  .text-input:focus { outline: none; border-color: var(--brass); box-shadow: 0 0 0 3px rgba(29,111,224,0.14); }
   button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .role-card:focus-visible {
     outline: 2px solid var(--brass); outline-offset: 1px;
   }
   .modal-card { animation: modal-in 0.18s ease; }
   @keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  ::selection { background: rgba(169,121,30,0.25); }
+  ::selection { background: rgba(29,111,224,0.25); }
+  .toast {
+    position: fixed; top: 14px; left: 14px; right: 14px; z-index: 60; margin: 0 auto; max-width: 380px;
+    background: var(--ink); border: 1.5px solid var(--toast-color); border-radius: 9px; padding: 11px 12px;
+    display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--paper);
+    box-shadow: 0 8px 24px rgba(15,35,70,0.18); cursor: pointer; animation: toast-in 0.2s ease;
+  }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  .password-wrap { position: relative; }
+  .password-wrap .text-input { padding-right: 38px; }
+  .password-toggle-btn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--paper-dim); cursor: pointer; padding: 4px; display: flex; }
+  .password-toggle-btn:hover { color: var(--brass); }
+
+  /* Auth card — gives sign in/up its own elevated surface instead of sitting
+     directly on the page background, like a real app's login screen. */
+  .auth-card { background: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 24px 22px; margin-top: 22px; box-shadow: 0 1px 2px rgba(15,35,70,0.05), 0 12px 32px rgba(15,35,70,0.10); animation: modal-in 0.22s ease; }
+  .auth-tabs { background: var(--line-soft); border-radius: 9px; padding: 3px; }
+  .auth-tab { flex: 1; text-align: center; padding: 8px; border-radius: 7px; border: none; background: transparent; color: var(--paper-dim); font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.05em; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; }
+  .auth-tab.active { background: var(--ink); color: var(--brass); font-weight: 700; box-shadow: 0 1px 3px rgba(15,35,70,0.12); }
+  .avatar-fallback, .avatar-photo { box-shadow: 0 2px 6px rgba(15,35,70,0.15); }
 
   .dashboard-grid { display: flex; flex-direction: column; gap: 12px; }
   .dashboard-grid .span-2 { }
   .score-views { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
   .score-panel { min-width: 0; }
-  .score-views .score-panel:nth-child(2) { border-left: 1px dashed var(--line); padding-left: 10px; }
+  .score-views .score-panel:nth-child(2) { border-left: 2px dashed var(--line-strong); padding-left: 10px; }
 
   @media (min-width: 860px) {
-    body { background: #E7DBB9; padding: 40px 24px; }
-    .phone { max-width: 1180px; margin: 0 auto; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 30px 80px rgba(43,33,22,0.20); min-height: 82vh; overflow: hidden; }
+    body { background: #CFE1F7; padding: 40px 24px; }
+    .phone { max-width: 1180px; margin: 0 auto; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 30px 80px rgba(15,35,70,0.20); min-height: 82vh; overflow: hidden; }
     .app-topbar { padding: 20px 48px; }
     .screen-pad { padding: 30px 48px 48px; }
     .splash { max-width: 480px; margin: 0 auto; padding: 80px 20px 20px; }
@@ -251,6 +272,9 @@ const sb = (CONFIGURED && typeof window.supabase !== 'undefined') ? window.supab
 // =============================================================================
 // Icons
 // =============================================================================
+function escapeAttr(str) {
+  return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 function icon(name, size, color) {
   size = size || 16; color = color || 'currentColor';
   const paths = {
@@ -268,6 +292,9 @@ function icon(name, size, color) {
     rupee: '<path d="M6 4h12M6 9h12M6 4c4 0 7 1.5 7 4.5S10 13 6 13l8 8"/>',
     logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
     menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
+    eye: '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>',
+    eyeOff: '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.7 18.7 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.7 18.7 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>',
+    camera: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
   };
   return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (paths[name] || '') + '</svg>';
 }
@@ -284,15 +311,15 @@ const MAX_INTEGER = { 10: 100, 20: 200, 30: 300, 40: 400, 60: 600 };
 const MAX_DECIMAL = { 10: 109.0, 20: 218.0, 30: 327.0, 40: 436.0, 60: 654.0 };
 const STATUS_META = {
   PAID: { color: 'var(--forest)', icon: 'check' },
-  DUE: { color: 'var(--brass)', icon: 'alert' },
+  DUE: { color: 'var(--warning)', icon: 'alert' },
   OVERDUE: { color: 'var(--rust)', icon: 'x' },
-  PAYMENT_PENDING: { color: 'var(--brass)', icon: 'clock' },
-  CASH_PENDING: { color: 'var(--brass)', icon: 'clock' }, // legacy status, kept so old rows still render
+  PAYMENT_PENDING: { color: 'var(--warning)', icon: 'clock' },
+  CASH_PENDING: { color: 'var(--warning)', icon: 'clock' }, // legacy status, kept so old rows still render
 };
 const ATT_META = {
   APPROVED: { color: 'var(--forest)', icon: 'check' },
   REJECTED: { color: 'var(--rust)', icon: 'x' },
-  PENDING: { color: 'var(--brass)', icon: 'clock' },
+  PENDING: { color: 'var(--warning)', icon: 'clock' },
 };
 const TYPE_COLORS = {
   'Practice Match': 'var(--olive)', 'State': 'var(--brass)', 'North Zone': '#7C93B5',
@@ -334,6 +361,7 @@ const state = {
   me: null,             // the students/coaches row for the signed-in user
   cache: { students: [], coaches: [], reminders: [], invoices: [], attendanceRequests: [], inventory: [] },
   issueFormItemId: null,
+  requestFormItemId: null,
   scoresByStudent: {},  // studentId -> array of match_scores rows
   pendingPhotoFile: null,
   photoError: '',
@@ -348,10 +376,50 @@ const state = {
   accountMenuOpen: false,
   accountForm: null,
   loadError: null,
+  toast: null,
+  coachDirectory: [],
+  signinForm: { email: '', password: '' },
+  signupForm: {
+    name: '', email: '', password: '', phone: '', weapon: 'Air Rifle 10m', coachId: '',
+    shooterCategory: 'ISSF', nationalQualified: 'false', shooterId: '', nraiEmail: '',
+    specialization: 'Air Rifle 10m', academyName: '', academyAddress: '', upiId: '', laneReservation: 'false',
+  },
+  suWeapon: 'Air Rifle 10m',
   chartMatchType: '10',
 };
 
 function render() { document.getElementById('root').innerHTML = App(); }
+
+// In-app toast notifications — replaces jarring native showToast() popups with a
+// dismissible banner styled to match the app, auto-clearing after a few
+// seconds. type is 'error' (default), 'success', or 'info'.
+let toastTimer = null;
+function showToast(message, type) {
+  state.toast = { message: message, type: type || 'error' };
+  render();
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { state.toast = null; render(); }, 4200);
+}
+function dismissToast() { clearTimeout(toastTimer); state.toast = null; render(); }
+// Pure DOM manipulation (no render()) — toggling this must never rebuild
+// the form, or every other field the person has typed into would be wiped.
+function togglePasswordVisibility(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if (!input) return;
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  if (btn) btn.innerHTML = icon(showing ? 'eye' : 'eyeOff', 15);
+}
+function submitOnEnter(e, fn) { if (e.key === 'Enter') fn(); }
+function toastBanner() {
+  if (!state.toast) return '';
+  const t = state.toast;
+  const color = t.type === 'success' ? 'var(--forest)' : t.type === 'info' ? 'var(--brass)' : 'var(--rust)';
+  const iconName = t.type === 'success' ? 'check' : t.type === 'info' ? 'bell' : 'alert';
+  return '<div class="toast" style="--toast-color:' + color + '" onclick="dismissToast()">' +
+    icon(iconName, 15, color) + '<span style="flex:1">' + t.message + '</span>' + icon('x', 12, 'var(--paper-dim)') + '</div>';
+}
 function setBusy(b) { state.busy = b; }
 
 // =============================================================================
@@ -367,6 +435,12 @@ async function boot() {
   }
   state.screen = 'AUTH';
   render();
+  fetchCoachDirectory();
+}
+async function fetchCoachDirectory() {
+  const { data } = await sb.from('coach_directory').select('*').order('name');
+  state.coachDirectory = data || [];
+  if (state.screen === 'AUTH') render();
 }
 async function fetchProfile() {
   const { data } = await sb.from('profiles').select('*').eq('id', state.session.user.id).single();
@@ -375,12 +449,12 @@ async function fetchProfile() {
 async function routeAfterAuth() {
   if (state.profile.role === 'student') {
     const { data, error } = await sb.from('students').select('*').eq('id', state.profile.id).single();
-    if (error) { alert('Signed in, but could not load your student record: ' + error.message + ' (if this is a test account from before a recent fix, ask whoever manages the database to run the backfill migration.)'); }
+    if (error) { showToast('Signed in, but could not load your student record: ' + error.message + ' (if this is a test account from before a recent fix, ask whoever manages the database to run the backfill migration.)'); }
     state.me = data;
     await enterStudentDashboard();
   } else if (state.profile.role === 'coach') {
     const { data, error } = await sb.from('coaches').select('*').eq('id', state.profile.id).single();
-    if (error) { alert('Signed in, but could not load your coach record: ' + error.message + ' (if this is a test account from before a recent fix, ask whoever manages the database to run the backfill migration.)'); }
+    if (error) { showToast('Signed in, but could not load your coach record: ' + error.message + ' (if this is a test account from before a recent fix, ask whoever manages the database to run the backfill migration.)'); }
     state.me = data;
     await enterCoachDashboard();
   } else {
@@ -388,37 +462,105 @@ async function routeAfterAuth() {
   }
 }
 function setAuthTab(t) { state.authTab = t; render(); }
-function handlePhotoSelect(e) {
+async function handlePhotoSelect(e) {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > 1024 * 1024) { state.photoError = 'File too large — please choose a photo under 1MB.'; state.pendingPhotoFile = null; render(); return; }
-  state.photoError = ''; state.pendingPhotoFile = file; render();
+  state.photoError = '';
+  state.photoProcessing = true;
+  render();
+  try {
+    const compressed = await compressImageToUnder1MB(file);
+    if (state.pendingPhotoPreviewUrl) URL.revokeObjectURL(state.pendingPhotoPreviewUrl);
+    state.pendingPhotoFile = compressed;
+    state.pendingPhotoPreviewUrl = URL.createObjectURL(compressed);
+  } catch (err) {
+    state.photoError = 'Could not process that photo: ' + (err && err.message ? err.message : 'please try a different file.');
+    state.pendingPhotoFile = null;
+    state.pendingPhotoPreviewUrl = null;
+  }
+  state.photoProcessing = false;
+  render();
+}
+// Resizes and re-compresses as JPEG until it fits under 1MB, instead of just
+// rejecting anything over the limit — most phone camera photos are several
+// MB straight out of the camera, so a hard reject would block almost everyone.
+function compressImageToUnder1MB(file) {
+  const MAX_BYTES = 1024 * 1024;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('could not read the file'));
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('could not load that image'));
+      img.onload = () => {
+        let width = img.width, height = img.height;
+        const maxDim = 900;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round(height * (maxDim / width)); width = maxDim; }
+          else { width = Math.round(width * (maxDim / height)); height = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        let quality = 0.9;
+        const tryExport = () => {
+          canvas.toBlob((blob) => {
+            if (!blob) { reject(new Error('compression failed')); return; }
+            if (blob.size <= MAX_BYTES || quality <= 0.3) {
+              resolve(new File([blob], (file.name.replace(/\.[^.]+$/, '') || 'photo') + '.jpg', { type: 'image/jpeg' }));
+            } else {
+              quality -= 0.15;
+              tryExport();
+            }
+          }, 'image/jpeg', quality);
+        };
+        tryExport();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function photoDetailsBlock() {
+  if (state.photoProcessing) return '<div style="font-size:11.5px;color:var(--paper-dim);margin:8px 0">Compressing photo…</div>';
+  const f = state.pendingPhotoFile;
+  if (!f) return '';
+  const sizeKb = Math.round(f.size / 1024);
+  return '<div style="display:flex;align-items:center;gap:10px;margin:8px 0;padding:8px;background:var(--line-soft);border-radius:6px">' +
+    (state.pendingPhotoPreviewUrl ? '<img src="' + state.pendingPhotoPreviewUrl + '" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:1.5px solid var(--brass)"/>' : '') +
+    '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeAttr(f.name) + '</div>' +
+    '<div style="font-size:10.5px;color:var(--forest)">' + icon('check', 10, 'var(--forest)') + ' ' + sizeKb + ' KB — under 1MB, ready to upload</div></div></div>';
 }
 async function submitSignUp() {
-  const role = document.getElementById('suRole').value;
-  const name = document.getElementById('suName').value.trim();
-  const email = document.getElementById('suEmail').value.trim();
-  const password = document.getElementById('suPassword').value;
-  if (!name || !email || !password) { alert('Please fill in your name, email, and password.'); return; }
-  if (password.length < 6) { alert('Password must be at least 6 characters.'); return; }
+  const role = state.suRole || 'student';
+  const f = state.signupForm;
+  const name = f.name.trim(), email = f.email.trim(), password = f.password;
+  if (!name || !email || !password) { showToast('Please fill in your name, email, and password.'); return; }
+  if (password.length < 6) { showToast('Password must be at least 6 characters.'); return; }
 
-  let phone = '', category = '', shooterCategory = '', coachName = '', nationalQualified = 'false', shooterId = '', specialization = '', academyName = '', academyAddress = '', laneReservation = 'false', upiId = '';
+  let phone = '', category = '', shooterCategory = '', coachId = '', coachName = '', nationalQualified = 'false', shooterId = '', nraiEmail = '', specialization = '', academyName = '', academyAddress = '', laneReservation = 'false', upiId = '';
   if (role === 'student') {
-    phone = document.getElementById('suPhone').value.trim();
-    category = document.getElementById('suWeapon').value;
-    coachName = document.getElementById('suCoachName').value.trim();
-    shooterCategory = document.getElementById('suShooterCategory').value;
-    if (shooterCategory === 'ISSF') { nationalQualified = document.getElementById('suNationalQualified').value; }
-    shooterId = document.getElementById('suShooterId').value.trim();
-    if (!phone) { alert('Please enter your mobile number.'); return; }
-    if (!coachName) { alert('Please enter your coach\'s name.'); return; }
+    phone = f.phone.trim();
+    category = f.weapon;
+    coachId = f.coachId;
+    const chosenCoach = (state.coachDirectory || []).find((c) => c.id === coachId);
+    coachName = chosenCoach ? chosenCoach.name : '';
+    shooterCategory = f.shooterCategory;
+    if (shooterCategory === 'ISSF') { nationalQualified = f.nationalQualified; }
+    shooterId = f.shooterId.trim();
+    nraiEmail = f.nraiEmail.trim();
+    if (!phone) { showToast('Please enter your mobile number.'); return; }
+    if (!coachId) { showToast('Please select your coach.'); return; }
+    if (!shooterId) { showToast('Please enter your NRAI Shooter ID.'); return; }
+    if (!nraiEmail || !nraiEmail.includes('@')) { showToast('Please enter the email you used for your NRAI account.'); return; }
   } else if (role === 'coach') {
-    specialization = document.getElementById('suSpecialization').value;
-    academyName = document.getElementById('suAcademyName').value.trim();
-    academyAddress = document.getElementById('suAcademyAddress').value.trim();
-    upiId = document.getElementById('suUpiId').value.trim();
-    laneReservation = document.getElementById('suLaneReservation').value;
-    if (!academyName) { alert('Please enter your academy\'s name.'); return; }
+    specialization = f.specialization;
+    academyName = f.academyName.trim();
+    academyAddress = f.academyAddress.trim();
+    upiId = f.upiId.trim();
+    laneReservation = f.laneReservation;
+    if (!academyName) { showToast('Please enter your academy\'s name.'); return; }
   }
 
   setBusy(true); render();
@@ -428,13 +570,13 @@ async function submitSignUp() {
   // there's no active session yet to run a normal insert with.
   const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
     email, password,
-    options: { data: { role, name, phone, category, shooter_category: shooterCategory, coach_name: coachName, national_qualified: nationalQualified, nrai_shooter_id: shooterId, specialization, academy_name: academyName, academy_address: academyAddress, lane_reservation: laneReservation, academy_upi_id: upiId } },
+    options: { data: { role, name, phone, category, shooter_category: shooterCategory, coach_id: coachId, coach_name: coachName, national_qualified: nationalQualified, nrai_shooter_id: shooterId, nrai_email: nraiEmail, specialization, academy_name: academyName, academy_address: academyAddress, lane_reservation: laneReservation, academy_upi_id: upiId } },
   });
-  if (signUpErr) { setBusy(false); render(); alert('Sign up failed: ' + signUpErr.message); return; }
+  if (signUpErr) { setBusy(false); render(); showToast('Sign up failed: ' + signUpErr.message); return; }
   const user = signUpData.user;
   if (!user || !signUpData.session) {
     setBusy(false); state.authTab = 'signin'; state.screen = 'AUTH'; render();
-    alert('Account created. Your profile is saved. If email confirmation is required on your Supabase project, check your inbox, then sign in.');
+    showToast('Account created. Your profile is saved. If email confirmation is required on your Supabase project, check your inbox, then sign in.', 'success');
     return;
   }
 
@@ -445,11 +587,11 @@ async function submitSignUp() {
     const path = user.id + '/' + Date.now() + '-' + state.pendingPhotoFile.name;
     const { error: upErr } = await sb.storage.from('avatars').upload(path, state.pendingPhotoFile);
     if (upErr) {
-      alert('Account created, but the photo upload failed: ' + upErr.message + ' (you can skip this or try again later.)');
+      showToast('Account created, but the photo upload failed: ' + upErr.message + ' (you can skip this or try again later.)');
     } else {
       const { data: pub } = sb.storage.from('avatars').getPublicUrl(path);
       const { error: photoErr } = await sb.from('students').update({ photo_url: pub.publicUrl }).eq('id', user.id);
-      if (photoErr) alert('Account created, but saving the photo failed: ' + photoErr.message);
+      if (photoErr) showToast('Account created, but saving the photo failed: ' + photoErr.message);
     }
   }
 
@@ -459,21 +601,22 @@ async function submitSignUp() {
   await routeAfterAuth();
 }
 async function submitSignIn() {
-  const email = document.getElementById('siEmail').value.trim();
-  const password = document.getElementById('siPassword').value;
-  if (!email || !password) { alert('Please enter your email and password.'); return; }
+  const email = state.signinForm.email.trim();
+  const password = state.signinForm.password;
+  if (!email || !password) { showToast('Please enter your email and password.'); return; }
   setBusy(true); render();
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if (error) { setBusy(false); render(); alert('Sign in failed: ' + error.message); return; }
+  if (error) { setBusy(false); render(); showToast('Sign in failed: ' + error.message); return; }
   state.session = data.session;
   await fetchProfile();
   setBusy(false);
   await routeAfterAuth();
 }
 async function logout() {
-  if (supabase) await sb.auth.signOut();
+  teardownRealtime();
+  if (sb) await sb.auth.signOut();
   state.session = null; state.profile = null; state.me = null;
-  state.scoresByStudent = {}; state.cache = { students: [], coaches: [], reminders: [], invoices: [], attendanceRequests: [], inventory: [] };
+  state.scoresByStudent = {}; state.cache = { students: [], coaches: [], reminders: [], invoices: [], attendanceRequests: [], inventory: [], myIssues: [], itemRequests: [] };
   state.adminDetailId = null; state.screen = 'AUTH'; state.authTab = 'signin';
   render();
 }
@@ -488,6 +631,13 @@ async function fetchAttendanceRequests() { const { data } = await sb.from('atten
 async function fetchAllInvoices() { const { data } = await sb.from('invoices').select('*').order('paid_at', { ascending: false }); state.cache.invoices = data || []; }
 async function fetchMyInvoices(studentId) { const { data } = await sb.from('invoices').select('*').eq('student_id', studentId).order('paid_at', { ascending: false }); return data || []; }
 async function fetchInventory(coachId) { const { data } = await sb.from('inventory_items').select('*').eq('coach_id', coachId).order('name'); state.cache.inventory = data || []; }
+async function fetchItemRequests(coachId) { const { data } = await sb.from('inventory_issues').select('*').eq('coach_id', coachId).eq('status', 'requested').order('created_at'); state.cache.itemRequests = data || []; }
+async function fetchMyIssues(studentId) { const { data } = await sb.from('inventory_issues').select('*').eq('student_id', studentId).order('created_at', { ascending: false }); state.cache.myIssues = data || []; }
+async function fetchMyCoach(coachId) {
+  if (!coachId) return null;
+  const { data } = await sb.from('coaches').select('*').eq('id', coachId).maybeSingle();
+  return data || null;
+}
 async function loadScoresFor(studentId) { const { data } = await sb.from('match_scores').select('*').eq('student_id', studentId); state.scoresByStudent[studentId] = data || []; }
 function scoresFor(studentId, shots, mode) {
   return (state.scoresByStudent[studentId] || [])
@@ -496,10 +646,76 @@ function scoresFor(studentId, shots, mode) {
     .map((r) => ({ session: r.session_label, score: Number(r.score) }));
 }
 
+// =============================================================================
+// Realtime — keeps two open tabs (e.g. a student and their coach) in sync
+// without a manual refresh. Each dashboard subscribes to the tables it
+// cares about on entry, and the previous subscription is always torn down
+// first so switching screens never leaves a stale listener running.
+// =============================================================================
+let realtimeChannel = null;
+let realtimeDebounceTimer = null;
+function teardownRealtime() { if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; } }
+function debounceRefresh(fn) { clearTimeout(realtimeDebounceTimer); realtimeDebounceTimer = setTimeout(fn, 250); }
+
+async function refreshStudentData() {
+  if (!state.me || state.screen !== 'STUDENT_DASHBOARD') return;
+  const { data: freshMe } = await sb.from('students').select('*').eq('id', state.me.id).single();
+  if (freshMe) state.me = freshMe;
+  await Promise.all([fetchReminders(), fetchMyIssues(state.me.id)]);
+  state.cache.myInvoices = await fetchMyInvoices(state.me.id);
+  const pending = await sb.from('attendance_requests').select('*').eq('student_id', state.me.id);
+  state.cache.myAttendance = pending.data || [];
+  render();
+}
+function setupStudentRealtime() {
+  teardownRealtime();
+  realtimeChannel = sb.channel('rl-student-' + state.me.id)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance_requests', filter: 'student_id=eq.' + state.me.id }, () => debounceRefresh(refreshStudentData))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'students', filter: 'id=eq.' + state.me.id }, () => debounceRefresh(refreshStudentData))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_issues', filter: 'student_id=eq.' + state.me.id }, () => debounceRefresh(refreshStudentData))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: 'student_id=eq.' + state.me.id }, () => debounceRefresh(refreshStudentData))
+    .subscribe();
+}
+
+async function refreshCoachData() {
+  if (!state.me || state.screen !== 'COACH_DASHBOARD') return;
+  await Promise.all([fetchStudents(), fetchAttendanceRequests(), fetchInventory(state.me.id), fetchItemRequests(state.me.id)]);
+  render();
+}
+function setupCoachRealtime() {
+  teardownRealtime();
+  realtimeChannel = sb.channel('rl-coach-' + state.me.id)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance_requests' }, () => debounceRefresh(refreshCoachData))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_issues' }, () => debounceRefresh(refreshCoachData))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => debounceRefresh(refreshCoachData))
+    .subscribe();
+}
+
+async function refreshAdminData() {
+  if (state.screen !== 'ADMIN_DASHBOARD') return;
+  await Promise.all([fetchStudents(), fetchCoaches(), fetchAttendanceRequests(), fetchAllInvoices()]);
+  render();
+}
+function setupAdminRealtime() {
+  teardownRealtime();
+  realtimeChannel = sb.channel('rl-admin')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => debounceRefresh(refreshAdminData))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance_requests' }, () => debounceRefresh(refreshAdminData))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, () => debounceRefresh(refreshAdminData))
+    .subscribe();
+}
+
 async function enterStudentDashboard() {
   state.screen = 'LOADING'; state.chartMatchType = '10'; render();
   try {
-    await Promise.all([fetchReminders(), loadScoresFor(state.me.id)]);
+    const coachMatch = await fetchMyCoach(state.me.coach_id);
+    state.cache.myCoach = coachMatch;
+    await Promise.all([
+      fetchReminders(),
+      loadScoresFor(state.me.id),
+      fetchMyIssues(state.me.id),
+      coachMatch ? fetchInventory(coachMatch.id) : Promise.resolve(),
+    ]);
     state.cache.myInvoices = await fetchMyInvoices(state.me.id);
     const pending = await sb.from('attendance_requests').select('*').eq('student_id', state.me.id);
     state.cache.myAttendance = pending.data || [];
@@ -509,16 +725,18 @@ async function enterStudentDashboard() {
   state.feeReminderOpen = state.me.fee_status === 'DUE' || state.me.fee_status === 'OVERDUE';
   state.screen = 'STUDENT_DASHBOARD';
   render();
+  setupStudentRealtime();
 }
 async function enterCoachDashboard() {
   state.screen = 'LOADING'; render();
   try {
-    await Promise.all([fetchStudents(), fetchReminders(), fetchAttendanceRequests(), fetchInventory(state.me.id)]);
+    await Promise.all([fetchStudents(), fetchReminders(), fetchAttendanceRequests(), fetchInventory(state.me.id), fetchItemRequests(state.me.id)]);
   } catch (err) {
     state.loadError = 'Could not load your dashboard: ' + (err && err.message ? err.message : 'check your internet connection.');
   }
   state.screen = 'COACH_DASHBOARD';
   render();
+  setupCoachRealtime();
 }
 async function enterAdminDashboard() {
   state.screen = 'LOADING'; render();
@@ -529,6 +747,7 @@ async function enterAdminDashboard() {
   }
   state.screen = 'ADMIN_DASHBOARD';
   render();
+  setupAdminRealtime();
 }
 function goHome() { logout(); }
 function dismissLoadError() { state.loadError = null; render(); }
@@ -550,7 +769,7 @@ function attStamp(status) {
 }
 function avatar(person, size) {
   size = size || 44;
-  if (person.photo_url) return '<img src="' + person.photo_url + '" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:cover;border:1.5px solid var(--brass)" />';
+  if (person.photo_url) return '<img src="' + person.photo_url + '" class="avatar-photo" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:cover;border:1.5px solid var(--brass)" />';
   const initials = (person.name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   return '<div class="avatar-fallback" style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.36) + 'px">' + initials + '</div>';
 }
@@ -611,9 +830,8 @@ function scorePanel(studentId, mode, allowLogging) {
       '<div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:var(--paper)">' + fmt(analysis.best) + '</div><div class="eyebrow" style="font-size:9px">Best</div></div>' +
       '<div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:' + analysis.trendColor + '">' + analysis.trend + '</div><div class="eyebrow" style="font-size:9px">Trend</div></div>' +
       '<div class="analysis-cell"><div class="mono-sm" style="font-size:11.5px;color:var(--paper)">' + analysis.consistency + '</div><div class="eyebrow" style="font-size:9px">Consistency</div></div></div>'
-      : '<div style="font-size:10.5px;color:var(--paper-dim);margin:6px 0">Log at least 2 sessions to see your performance analysis.</div>') +
-    '<div class="logbook" style="margin-top:10px">' + data.slice().reverse().map((s) => '<div class="log-row"><span class="mono-sm">' + s.session + '</span><span style="font-size:11.5px;flex:1">' + state.chartMatchType + '-shot match — scored ' + fmt(s.score) + '</span><span class="mono-sm" style="color:var(--paper-dim)">Present</span></div>').join('') + '</div>') +
-    (allowLogging ? '<div style="margin-top:12px;border-top:1px dashed var(--line);padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Log a session score</div>' +
+      : '<div style="font-size:10.5px;color:var(--paper-dim);margin:6px 0">Log at least 2 sessions to see your performance analysis.</div>')) +
+    (allowLogging ? '<div style="margin-top:12px;border-top:2px dashed var(--line-strong);padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Log a session score</div>' +
       '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:6px">Enter your ' + state.chartMatchType + '-shot score out of ' + max.toFixed(1) + '</div>' +
       '<input id="sessionScoreInput_' + mode + '" class="text-input" type="number" step="0.1" min="0" max="' + max + '" placeholder="e.g. ' + (max * 0.75).toFixed(1) + '" style="margin-bottom:8px"/>' +
       '<button class="btn-brass" onclick="logSessionScore(\'' + mode + '\')">Add session</button></div>' : '') + '</div>';
@@ -629,7 +847,7 @@ async function logSessionScore(mode) {
   const val = parseFloat(input.value);
   const shots = Number(state.chartMatchType);
   const max = mode === 'decimal' ? MAX_DECIMAL[shots] : MAX_INTEGER[shots];
-  if (isNaN(val) || val < 0 || val > max) { alert('Please enter a score between 0 and ' + max.toFixed(1) + '.'); return; }
+  if (isNaN(val) || val < 0 || val > max) { showToast('Please enter a score between 0 and ' + max.toFixed(1) + '.'); return; }
   const scoreVal = mode === 'decimal' ? Math.round(val * 10) / 10 : Math.round(val);
   const existing = scoresFor(state.me.id, shots, mode);
   await sb.from('match_scores').insert({ student_id: state.me.id, shots, mode, session_label: 'M' + (existing.length + 1), score: scoreVal });
@@ -662,7 +880,7 @@ async function submitReminder() {
   const type = document.getElementById('remType').value;
   const venue = document.getElementById('remVenue').value.trim();
   const notes = document.getElementById('remNotes').value.trim();
-  if (!title || !date) { alert('Please fill in the competition name and date.'); return; }
+  if (!title || !date) { showToast('Please fill in the competition name and date.'); return; }
   await sb.from('reminders').insert({ title, date, type, venue, notes, created_by: state.profile.id });
   await fetchReminders();
   state.addReminderOpen = false; state.selectedReminderDate = null; render();
@@ -693,7 +911,7 @@ function monthCalendar() {
 }
 function addReminderForm() {
   const dateVal = state.selectedReminderDate || '';
-  return '<div style="margin-top:10px;border-top:1px dashed var(--line);padding-top:10px">' +
+  return '<div style="margin-top:10px;border-top:2px dashed var(--line-strong);padding-top:10px">' +
     '<label class="field-label" style="margin-top:0">Competition / match name</label><input id="remTitle" class="text-input" placeholder="e.g. State Championship Trials" style="margin-bottom:6px"/>' +
     '<label class="field-label">Date</label><input id="remDate" class="text-input" type="date" value="' + dateVal + '" style="margin-bottom:6px"/>' +
     '<label class="field-label">Type</label><select id="remType" class="text-input" style="margin-bottom:6px">' + REMINDER_TYPES.map((t) => '<option>' + t + '</option>').join('') + '</select>' +
@@ -716,7 +934,7 @@ function calendarPopover(shooterCategory) {
     }).join('') : '<div style="font-size:11.5px;color:var(--paper-dim);padding:4px 0">No reminders this month.</div>') + '</div>' +
     '<button class="chip chip-active" style="width:100%;margin-top:8px;text-align:center" onclick="openAddReminderForDate()">+ Add reminder' + (state.selectedReminderDate ? ' for ' + formatDate(state.selectedReminderDate) : '') + '</button>' +
     (state.addReminderOpen ? addReminderForm() : '') +
-    (shooterCategory ? '<div style="font-size:8.5px;color:var(--paper-dim);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);line-height:1.4">Simplified guide based on the NRAI Match Book — confirm current eligibility with your State Association.</div>' : '') + '</div>';
+    (shooterCategory ? '<div style="font-size:8.5px;color:var(--paper-dim);margin-top:8px;padding-top:8px;border-top:2px dashed var(--line-strong);line-height:1.4">Simplified guide based on the NRAI Match Book — confirm current eligibility with your State Association.</div>' : '') + '</div>';
 }
 
 // Fees / payments / invoices
@@ -729,15 +947,18 @@ function closeFeeReminderAndPay() { state.feeReminderOpen = false; state.payment
 async function generateInvoice(student, method) {
   const invoiceNumber = 'INV-' + String(student.id).slice(0, 8).toUpperCase() + '-' + Date.now().toString().slice(-6);
 
-  // Find the coach teaching this student's weapon category, for academy
-  // branding and lane info on the invoice (best-effort — falls back to
-  // generic branding if no coach has signed up for that category yet).
-  const { data: coachMatch } = await sb.from('coaches').select('*').eq('specialization', student.category).limit(1).maybeSingle();
+  // The student's actual coach/academy — never guess this via weapon
+  // category, since that could match an entirely unrelated academy that
+  // happens to teach the same weapon.
+  const { data: coachMatch } = student.coach_id
+    ? await sb.from('coaches').select('*').eq('id', student.coach_id).maybeSingle()
+    : { data: null };
 
-  // Any inventory items this coach has issued to the student but not yet billed.
+  // Any inventory items this coach has actually issued (approved, not just
+  // requested or declined) to the student but not yet billed.
   let pendingIssues = [];
   if (coachMatch) {
-    const { data: issues } = await sb.from('inventory_issues').select('*').eq('student_id', student.id).eq('invoiced', false);
+    const { data: issues } = await sb.from('inventory_issues').select('*').eq('student_id', student.id).eq('invoiced', false).eq('status', 'issued');
     pendingIssues = issues || [];
   }
 
@@ -778,9 +999,13 @@ async function payVia(method) {
     return;
   }
 
-  const { data: coachMatch } = await sb.from('coaches').select('academy_name, academy_upi_id').eq('specialization', student.category).limit(1).maybeSingle();
+  if (!student.coach_id) {
+    showToast('You don\'t have a coach assigned yet — please use Cash for now, or contact your academy.');
+    return;
+  }
+  const { data: coachMatch } = await sb.from('coaches').select('academy_name, academy_upi_id').eq('id', student.coach_id).maybeSingle();
   if (!coachMatch || !coachMatch.academy_upi_id) {
-    alert('Your coach hasn\'t set up a UPI ID for online payments yet — please use Cash for now.');
+    showToast('Your coach hasn\'t set up a UPI ID for online payments yet — please use Cash for now.');
     return;
   }
 
@@ -799,7 +1024,7 @@ async function payVia(method) {
   // will typically just fail to open anything — UPI payments are
   // inherently a mobile-app handoff.
   window.location.href = upiLink;
-  alert('Opening ' + method + ' to complete your payment of ₹' + fee.toLocaleString('en-IN') + '. Once your coach confirms they\'ve received it, your status will update to Paid and your invoice will be ready to download.');
+  showToast('Opening ' + method + ' to complete your payment of ₹' + fee.toLocaleString('en-IN') + '. Once your coach confirms they\'ve received it, your status will update to Paid and your invoice will be ready to download.', 'info');
 }
 async function confirmPayment(studentId) {
   const student = state.cache.students.find((s) => s.id === studentId);
@@ -816,7 +1041,7 @@ function closeInvoiceIfOverlay(e) { if (e.target.classList.contains('modal-overl
 function viewInvoice(id) { state.invoiceOpenId = id; render(); }
 function downloadInvoicePDF(inv) {
   if (!inv) { inv = findInvoice(state.invoiceOpenId); }
-  if (!inv || !window.jspdf) { alert('PDF library is still loading — please try again in a moment.'); return; }
+  if (!inv || !window.jspdf) { showToast('PDF library is still loading — please try again in a moment.'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: 'a5' });
   const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
@@ -911,10 +1136,10 @@ function invoiceModal(invoiceId) {
     (inv.shooter_id ? '<div class="receipt-row"><span>NRAI Shooter ID</span><span style="font-size:11px">' + inv.shooter_id + '</span></div>' : '') +
     '<div class="receipt-row"><span>Date</span><span>' + new Date(inv.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '</span></div>' +
     '<div class="receipt-row"><span>Method</span><span>' + inv.method + '</span></div>' +
-    '<div style="margin-top:8px;border-top:1px dashed var(--line);padding-top:8px">' +
+    '<div style="margin-top:8px;border-top:2px dashed var(--line-strong);padding-top:8px">' +
       items.map((it) => '<div class="receipt-row"><span style="font-size:11px">' + it.description + (it.qty > 1 ? ' × ' + it.qty : '') + '</span><span>₹' + Number(it.amount).toLocaleString('en-IN') + '</span></div>').join('') +
     '</div>' +
-    '<div class="receipt-row" style="border-top:1px dashed var(--line);margin-top:6px;padding-top:8px"><span style="font-weight:600">Total paid</span><span class="mono-lg" style="font-size:18px">₹' + Number(inv.amount).toLocaleString('en-IN') + '</span></div>' +
+    '<div class="receipt-row" style="border-top:2px dashed var(--line-strong);margin-top:6px;padding-top:8px"><span style="font-weight:600">Total paid</span><span class="mono-lg" style="font-size:18px">₹' + Number(inv.amount).toLocaleString('en-IN') + '</span></div>' +
     '<button class="btn-brass" style="margin-top:14px" onclick="downloadInvoicePDF()">' + icon('rupee', 14) + ' Download PDF</button>' +
     '<button class="chip" style="width:100%;margin-top:8px;text-align:center" onclick="closeInvoice()">Done</button></div></div>';
 }
@@ -923,7 +1148,7 @@ function invoiceModal(invoiceId) {
 async function markAttendance() {
   const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
   const already = (state.cache.myAttendance || []).find((r) => r.requested_date === today && r.status === 'PENDING');
-  if (already) { alert('You already have a pending request for today.'); return; }
+  if (already) { showToast('You already have a pending request for today.'); return; }
   await sb.from('attendance_requests').insert({ student_id: state.me.id, requested_date: today, status: 'PENDING' });
   const { data } = await sb.from('attendance_requests').select('*').eq('student_id', state.me.id);
   state.cache.myAttendance = data || [];
@@ -949,15 +1174,15 @@ async function submitInventoryAdd() {
   const name = document.getElementById('invItemName').value.trim();
   const qty = parseInt(document.getElementById('invItemQty').value, 10);
   const price = parseFloat(document.getElementById('invItemPrice').value) || 0;
-  if (!name) { alert('Please enter an item name.'); return; }
-  if (!qty || qty <= 0) { alert('Please enter a quantity greater than 0.'); return; }
+  if (!name) { showToast('Please enter an item name.'); return; }
+  if (!qty || qty <= 0) { showToast('Please enter a quantity greater than 0.'); return; }
   const existing = state.cache.inventory.find((i) => i.name.trim().toLowerCase() === name.toLowerCase());
   if (existing) {
     const { error } = await sb.from('inventory_items').update({ quantity: existing.quantity + qty, unit_price: price || existing.unit_price, updated_at: new Date().toISOString() }).eq('id', existing.id);
-    if (error) { alert('Could not update inventory: ' + error.message); return; }
+    if (error) { showToast('Could not update inventory: ' + error.message); return; }
   } else {
     const { error } = await sb.from('inventory_items').insert({ coach_id: state.me.id, name, quantity: qty, unit_price: price });
-    if (error) { alert('Could not add item: ' + error.message); return; }
+    if (error) { showToast('Could not add item: ' + error.message); return; }
   }
   await fetchInventory(state.me.id);
   document.getElementById('invItemName').value = ''; document.getElementById('invItemQty').value = ''; document.getElementById('invItemPrice').value = '';
@@ -968,17 +1193,47 @@ async function submitIssueItem(itemId) {
   const studentId = document.getElementById('issueStudentSelect_' + itemId).value;
   const qty = parseInt(document.getElementById('issueQty_' + itemId).value, 10);
   const item = state.cache.inventory.find((i) => i.id === itemId);
-  if (!studentId) { alert('Please choose a student.'); return; }
-  if (!qty || qty <= 0) { alert('Please enter a quantity greater than 0.'); return; }
-  if (!item || qty > item.quantity) { alert('Not enough stock — only ' + (item ? item.quantity : 0) + ' left.'); return; }
+  if (!studentId) { showToast('Please choose a student.'); return; }
+  if (!qty || qty <= 0) { showToast('Please enter a quantity greater than 0.'); return; }
+  if (!item || qty > item.quantity) { showToast('Not enough stock — only ' + (item ? item.quantity : 0) + ' left.'); return; }
   const { error: issueErr } = await sb.from('inventory_issues').insert({
-    coach_id: state.me.id, student_id: studentId, item_name: item.name, quantity: qty, unit_price: item.unit_price,
+    coach_id: state.me.id, student_id: studentId, item_name: item.name, quantity: qty, unit_price: item.unit_price, status: 'issued',
   });
-  if (issueErr) { alert('Could not issue item: ' + issueErr.message); return; }
+  if (issueErr) { showToast('Could not issue item: ' + issueErr.message); return; }
   const { error: updateErr } = await sb.from('inventory_items').update({ quantity: item.quantity - qty }).eq('id', itemId);
-  if (updateErr) { alert('Item was issued, but updating stock failed: ' + updateErr.message); }
+  if (updateErr) { showToast('Item was issued, but updating stock failed: ' + updateErr.message); }
   state.issueFormItemId = null;
   await fetchInventory(state.me.id);
+  render();
+}
+function toggleRequestForm(itemId) { state.requestFormItemId = state.requestFormItemId === itemId ? null : itemId; render(); }
+async function submitRequestItem(itemId) {
+  const qty = parseInt(document.getElementById('requestQty_' + itemId).value, 10);
+  const item = state.cache.inventory.find((i) => i.id === itemId);
+  if (!item) return;
+  if (!qty || qty <= 0) { showToast('Please enter a quantity greater than 0.'); return; }
+  if (qty > item.quantity) { showToast('Only ' + item.quantity + ' left in stock.'); return; }
+  const { error } = await sb.from('inventory_issues').insert({
+    coach_id: item.coach_id, student_id: state.me.id, item_name: item.name, quantity: qty, unit_price: item.unit_price, status: 'requested',
+  });
+  if (error) { showToast('Could not send request: ' + error.message); return; }
+  state.requestFormItemId = null;
+  await fetchMyIssues(state.me.id);
+  render();
+}
+async function approveRequest(issueId) {
+  const req = (state.cache.itemRequests || []).find((r) => r.id === issueId);
+  if (!req) return;
+  const item = state.cache.inventory.find((i) => i.coach_id === state.me.id && i.name === req.item_name);
+  if (!item || item.quantity < req.quantity) { showToast('Not enough stock to approve this — only ' + (item ? item.quantity : 0) + ' left.'); return; }
+  await sb.from('inventory_items').update({ quantity: item.quantity - req.quantity }).eq('id', item.id);
+  await sb.from('inventory_issues').update({ status: 'issued' }).eq('id', issueId);
+  await Promise.all([fetchInventory(state.me.id), fetchItemRequests(state.me.id)]);
+  render();
+}
+async function declineRequest(issueId) {
+  await sb.from('inventory_issues').update({ status: 'declined' }).eq('id', issueId);
+  await fetchItemRequests(state.me.id);
   render();
 }
 async function openAdminDetail(id) {
@@ -996,51 +1251,84 @@ function closeDetailIfOverlay(e) { if (e.target.classList.contains('modal-overla
 // =============================================================================
 function screenAuth() {
   const tab = state.authTab;
-  return '<div class="splash target-watermark"><div class="brand-center">' + icon('crosshair', 40, 'var(--brass)') +
-    '<div class="brand-title" style="font-size:22px;margin-top:8px">Range Ledger</div><div class="brand-sub">Precision Shooting Academy</div></div>' +
-    '<div class="auth-tabs" style="margin-top:24px"><div class="auth-tab ' + (tab === 'signin' ? 'active' : '') + '" onclick="setAuthTab(\'signin\')">Sign in</div><div class="auth-tab ' + (tab === 'signup' ? 'active' : '') + '" onclick="setAuthTab(\'signup\')">Sign up</div></div>' +
-    (tab === 'signin' ? screenSignIn() : screenSignUp()) + '</div>';
+  return '<div class="splash target-watermark"><div class="brand-center"><span class="brand-icon-ring">' + icon('crosshair', 40, 'var(--brass)') + '</span>' +
+    '<div class="brand-title" style="font-size:22px;margin-top:8px">Range Ledger</div></div>' +
+    '<div class="auth-card">' +
+    '<div class="auth-tabs"><div class="auth-tab ' + (tab === 'signin' ? 'active' : '') + '" onclick="setAuthTab(\'signin\')">Sign in</div><div class="auth-tab ' + (tab === 'signup' ? 'active' : '') + '" onclick="setAuthTab(\'signup\')">Sign up</div></div>' +
+    (tab === 'signin' ? screenSignIn() : screenSignUp()) + '</div></div>';
 }
 function screenSignIn() {
-  return '<label class="field-label" style="margin-top:0">Email</label><input id="siEmail" class="text-input" type="email" placeholder="you@example.com"/>' +
-    '<label class="field-label">Password</label><input id="siPassword" class="text-input" type="password" placeholder="••••••••"/>' +
+  const f = state.signinForm;
+  return '<label class="field-label" style="margin-top:0">Email</label><input id="siEmail" class="text-input" type="email" placeholder="you@example.com" value="' + escapeAttr(f.email) + '" oninput="state.signinForm.email=this.value" onkeydown="submitOnEnter(event, submitSignIn)"/>' +
+    '<label class="field-label">Password</label><div class="password-wrap"><input id="siPassword" class="text-input" type="password" placeholder="••••••••" value="' + escapeAttr(f.password) + '" oninput="state.signinForm.password=this.value" onkeydown="submitOnEnter(event, submitSignIn)"/>' +
+    '<button type="button" id="siPasswordToggle" class="password-toggle-btn" onclick="togglePasswordVisibility(\'siPassword\',\'siPasswordToggle\')">' + icon('eye', 15) + '</button></div>' +
     '<button class="btn-brass" style="margin-top:14px" onclick="submitSignIn()" ' + (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Signing in…' : 'Sign in') + '</button>';
+}
+function coachSelectField() {
+  const f = state.signupForm;
+  const matches = (state.coachDirectory || []).filter((c) => c.specialization === f.weapon);
+  if (matches.length === 0) {
+    return '<div class="text-input" style="color:var(--paper-dim)">No coaches registered yet for ' + f.weapon + '.</div>';
+  }
+  return '<select id="suCoachId" class="text-input" onchange="state.signupForm.coachId=this.value">' +
+    '<option value="">Select your coach…</option>' +
+    matches.map((c) => '<option value="' + c.id + '"' + (f.coachId === c.id ? ' selected' : '') + '>' + escapeAttr(c.name) + (c.academy_name ? ' — ' + escapeAttr(c.academy_name) : '') + '</option>').join('') +
+    '</select>';
 }
 function screenSignUp() {
   const role = state.suRole || 'student';
-  const shooterCat = state.suShooterCategory || 'ISSF';
+  const f = state.signupForm;
+  const shooterCat = f.shooterCategory || 'ISSF';
   return '<label class="field-label" style="margin-top:0">I am a…</label>' +
     '<select id="suRole" class="text-input" onchange="state.suRole=this.value;render()"><option value="student"' + (role === 'student' ? ' selected' : '') + '>Student</option><option value="coach"' + (role === 'coach' ? ' selected' : '') + '>Coach</option><option value="admin"' + (role === 'admin' ? ' selected' : '') + '>Admin</option></select>' +
-    '<label class="field-label">Full name</label><input id="suName" class="text-input" placeholder="e.g. Rohan Mehta"/>' +
-    '<label class="field-label">Email</label><input id="suEmail" class="text-input" type="email" placeholder="you@example.com"/>' +
-    '<label class="field-label">Password</label><input id="suPassword" class="text-input" type="password" placeholder="At least 6 characters"/>' +
+    '<label class="field-label">Full name</label><input id="suName" class="text-input" placeholder="e.g. Rohan Mehta" value="' + escapeAttr(f.name) + '" oninput="state.signupForm.name=this.value"/>' +
+    '<label class="field-label">Email</label><input id="suEmail" class="text-input" type="email" placeholder="you@example.com" value="' + escapeAttr(f.email) + '" oninput="state.signupForm.email=this.value"/>' +
+    '<label class="field-label">Password</label><div class="password-wrap"><input id="suPassword" class="text-input" type="password" placeholder="At least 6 characters" value="' + escapeAttr(f.password) + '" oninput="state.signupForm.password=this.value"/>' +
+    '<button type="button" id="suPasswordToggle" class="password-toggle-btn" onclick="togglePasswordVisibility(\'suPassword\',\'suPasswordToggle\')">' + icon('eye', 15) + '</button></div>' +
     (role === 'student' ? (
-      '<label class="field-label">Mobile number</label><input id="suPhone" class="text-input" type="tel" placeholder="e.g. 98765 43210"/>' +
-      '<label class="field-label">Weapon</label><select id="suWeapon" class="text-input"><option>Air Rifle 10m</option><option>Air Pistol 10m</option></select>' +
-      '<label class="field-label">Coach\'s name</label><input id="suCoachName" class="text-input" placeholder="e.g. Ranvijay Singh"/>' +
-      '<label class="field-label">Shooter category</label><select id="suShooterCategory" class="text-input" onchange="state.suShooterCategory=this.value;render()">' +
+      '<label class="field-label">Mobile number</label><input id="suPhone" class="text-input" type="tel" placeholder="e.g. 98765 43210" value="' + escapeAttr(f.phone) + '" oninput="state.signupForm.phone=this.value"/>' +
+      '<label class="field-label">Weapon</label><select id="suWeapon" class="text-input" onchange="state.signupForm.weapon=this.value;state.signupForm.coachId=\'\';render()">' +
+        '<option' + (f.weapon === 'Air Rifle 10m' ? ' selected' : '') + '>Air Rifle 10m</option>' +
+        '<option' + (f.weapon === 'Air Pistol 10m' ? ' selected' : '') + '>Air Pistol 10m</option>' +
+      '</select>' +
+      '<label class="field-label">Coach</label>' + coachSelectField() +
+      '<label class="field-label">Shooter category</label><select id="suShooterCategory" class="text-input" onchange="state.signupForm.shooterCategory=this.value;render()">' +
         '<option value="ISSF"' + (shooterCat === 'ISSF' ? ' selected' : '') + '>ISSF shooter</option>' +
         '<option value="NR"' + (shooterCat === 'NR' ? ' selected' : '') + '>NR (National Rules) shooter</option>' +
       '</select>' +
       (shooterCat === 'ISSF' ? (
         '<label class="field-label">Have you qualified for Nationals?</label>' +
-        '<select id="suNationalQualified" class="text-input"><option value="false">Not yet</option><option value="true">Yes, I have</option></select>'
+        '<select id="suNationalQualified" class="text-input" onchange="state.signupForm.nationalQualified=this.value">' +
+        '<option value="false"' + (f.nationalQualified === 'false' ? ' selected' : '') + '>Not yet</option>' +
+        '<option value="true"' + (f.nationalQualified === 'true' ? ' selected' : '') + '>Yes, I have</option></select>'
       ) : '') +
-      '<label class="field-label">NRAI Shooter ID (optional)</label>' +
-      '<input id="suShooterId" class="text-input" placeholder="e.g. NRAI-SH-40912" style="margin-bottom:4px"/>' +
-      '<a href="https://thenrai.org" target="_blank" rel="noopener" style="font-size:10.5px;color:var(--brass);text-decoration:underline">Don\'t know your Shooter ID? Log in at thenrai.org to find it, then come back and paste it here →</a>' +
-      '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:8px">Your fee invoices will be sent here and saved to your account for download anytime.</div>' +
-      '<label class="field-label">Passport size photo (max 1MB, optional)</label><input type="file" accept="image/*" class="text-input" onchange="handlePhotoSelect(event)"/>' +
+      '<label class="field-label">NRAI Shooter ID</label>' +
+      '<input id="suShooterId" class="text-input" placeholder="e.g. NRAI-SH-40912" value="' + escapeAttr(f.shooterId) + '" oninput="state.signupForm.shooterId=this.value" style="margin-bottom:4px"/>' +
+      '<a href="https://thenrai.in" target="_blank" rel="noopener" style="font-size:10.5px;color:var(--brass);text-decoration:underline">Don\'t know your Shooter ID? Log in at thenrai.in to find it, then come back and paste it here →</a>' +
+      '<label class="field-label">Email used for your NRAI / My NRAI account</label>' +
+      '<input id="suNraiEmail" class="text-input" type="email" placeholder="the email you used to sign up on thenrai.in" value="' + escapeAttr(f.nraiEmail) + '" oninput="state.signupForm.nraiEmail=this.value"/>' +
+      '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:8px">Your fee invoices will be sent to your account email above, and saved for download anytime.</div>' +
+      '<label class="field-label">Passport size photo</label>' +
+      '<div style="display:flex;gap:8px">' +
+      '<label class="photo-upload-btn" style="flex:1;justify-content:center">' + icon('camera', 14) + ' Choose file<input type="file" accept="image/*" style="display:none" onchange="handlePhotoSelect(event)"/></label>' +
+      '<label class="photo-upload-btn" style="flex:1;justify-content:center">' + icon('camera', 14) + ' Take photo<input type="file" accept="image/*" capture="user" style="display:none" onchange="handlePhotoSelect(event)"/></label>' +
+      '</div>' +
+      '<div style="font-size:10px;color:var(--paper-dim);margin-top:4px">Any size is fine — we\'ll automatically resize it to fit under 1MB.</div>' +
+      photoDetailsBlock() +
       (state.photoError ? '<div style="color:var(--rust);font-size:11px;margin-top:6px">' + state.photoError + '</div>' : '')
     ) : role === 'coach' ? (
-      '<label class="field-label">Specialization</label><select id="suSpecialization" class="text-input"><option>Air Rifle 10m</option><option>Air Pistol 10m</option></select>' +
-      '<label class="field-label">Academy name</label><input id="suAcademyName" class="text-input" placeholder="e.g. Apex Target Shooting Academy"/>' +
-      '<label class="field-label">Academy address</label><input id="suAcademyAddress" class="text-input" placeholder="e.g. Plot 42, Sports Complex Zone, Sector 18"/>' +
+      '<label class="field-label">Specialization</label><select id="suSpecialization" class="text-input" onchange="state.signupForm.specialization=this.value">' +
+        '<option' + (f.specialization === 'Air Rifle 10m' ? ' selected' : '') + '>Air Rifle 10m</option>' +
+        '<option' + (f.specialization === 'Air Pistol 10m' ? ' selected' : '') + '>Air Pistol 10m</option></select>' +
+      '<label class="field-label">Academy name</label><input id="suAcademyName" class="text-input" placeholder="e.g. Apex Target Shooting Academy" value="' + escapeAttr(f.academyName) + '" oninput="state.signupForm.academyName=this.value"/>' +
+      '<label class="field-label">Academy address</label><input id="suAcademyAddress" class="text-input" placeholder="e.g. Plot 42, Sports Complex Zone, Sector 18" value="' + escapeAttr(f.academyAddress) + '" oninput="state.signupForm.academyAddress=this.value"/>' +
       '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:4px">This name and address appear on the invoices your students receive.</div>' +
-      '<label class="field-label">UPI ID (to receive fee payments)</label><input id="suUpiId" class="text-input" placeholder="e.g. academyname@okaxis"/>' +
+      '<label class="field-label">UPI ID (to receive fee payments)</label><input id="suUpiId" class="text-input" placeholder="e.g. academyname@okaxis" value="' + escapeAttr(f.upiId) + '" oninput="state.signupForm.upiId=this.value"/>' +
       '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:4px">When a student pays via UPI or Google Pay, this is who they\'re paying — you\'ll confirm receipt yourself before their invoice is issued.</div>' +
       '<label class="field-label">Does your academy have lane reservation?</label>' +
-      '<select id="suLaneReservation" class="text-input"><option value="false">No</option><option value="true">Yes</option></select>'
+      '<select id="suLaneReservation" class="text-input" onchange="state.signupForm.laneReservation=this.value">' +
+      '<option value="false"' + (f.laneReservation === 'false' ? ' selected' : '') + '>No</option>' +
+      '<option value="true"' + (f.laneReservation === 'true' ? ' selected' : '') + '>Yes</option></select>'
     ) : '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:4px">Admin signup is open here for demo purposes — restrict this in production (e.g. invite-only via the Supabase dashboard).</div>') +
     '<button class="btn-brass" style="margin-top:14px" onclick="submitSignUp()" ' + (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Creating account…' : 'Create account') + '</button>';
 }
@@ -1079,23 +1367,23 @@ function accountPasswordForm() {
 async function submitEmailChange() {
   const oldEmail = document.getElementById('oldEmailInput').value.trim();
   const newEmail = document.getElementById('newEmailInput').value.trim();
-  if (!oldEmail || !newEmail) { alert('Please fill in both your current and new email.'); return; }
+  if (!oldEmail || !newEmail) { showToast('Please fill in both your current and new email.'); return; }
   const currentEmail = (state.session && state.session.user && state.session.user.email) || '';
-  if (oldEmail.toLowerCase() !== currentEmail.toLowerCase()) { alert('That doesn\'t match the email on your account.'); return; }
-  if (!newEmail.includes('@')) { alert('Please enter a valid new email address.'); return; }
+  if (oldEmail.toLowerCase() !== currentEmail.toLowerCase()) { showToast('That doesn\'t match the email on your account.'); return; }
+  if (!newEmail.includes('@')) { showToast('Please enter a valid new email address.'); return; }
   const { error } = await sb.auth.updateUser({ email: newEmail });
-  if (error) { alert('Could not update email: ' + error.message); return; }
-  alert('Check your inbox to confirm the email change.');
+  if (error) { showToast('Could not update email: ' + error.message); return; }
+  showToast('Check your inbox to confirm the email change.', 'success');
   state.accountForm = null; state.accountMenuOpen = false; render();
 }
 async function submitPasswordChange() {
   const oldPassword = document.getElementById('oldPasswordInput').value;
   const newPassword = document.getElementById('newPasswordInput').value;
-  if (!oldPassword || !newPassword) { alert('Please fill in both your current and new password.'); return; }
-  if (newPassword.length < 6) { alert('New password must be at least 6 characters.'); return; }
+  if (!oldPassword || !newPassword) { showToast('Please fill in both your current and new password.'); return; }
+  if (newPassword.length < 6) { showToast('New password must be at least 6 characters.'); return; }
   const { error } = await sb.auth.updateUser({ password: newPassword, current_password: oldPassword });
-  if (error) { alert('Could not update password: ' + error.message); return; }
-  alert('Password updated.');
+  if (error) { showToast('Could not update password: ' + error.message); return; }
+  showToast('Password updated.', 'success');
   state.accountForm = null; state.accountMenuOpen = false; render();
 }
 async function startNewAccount() {
@@ -1107,6 +1395,17 @@ async function startNewAccount() {
 function loadErrorBanner() {
   if (!state.loadError) return '';
   return '<div class="load-error-banner"><span style="flex:1">' + state.loadError + '</span><button onclick="retryLoad()">Retry</button><button onclick="dismissLoadError()">Dismiss</button></div>';
+}
+const NRAI_NEWS = [
+  { title: 'Results and updates from recent national selection trials', date: 'Aug 2026', url: 'https://www.thenrai.in/news_events_details.aspx' },
+  { title: 'Squad announcements for upcoming international events', date: 'Aug 2026', url: 'https://www.thenrai.in/news_events_details.aspx' },
+  { title: 'National Championship schedule and venue updates', date: '2026', url: 'https://www.thenrai.in/news_events_details.aspx' },
+];
+function nraiNewsSection() {
+  return '<div class="card span-2"><div class="eyebrow" style="margin-bottom:4px">NRAI news &amp; events</div>' +
+    '<div style="font-size:10px;color:var(--paper-dim);margin-bottom:10px">Curated highlights — this app can\'t pull a live feed from thenrai.in directly (their site doesn\'t allow that from a browser), so check the link below for the full, up-to-date list.</div>' +
+    '<div class="logbook">' + NRAI_NEWS.map((n) => '<a href="' + n.url + '" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><div class="log-row"><span style="font-size:12px;flex:1;color:var(--paper)">' + n.title + '</span><span class="mono-sm" style="color:var(--paper-dim)">' + n.date + '</span></div></a>').join('') + '</div>' +
+    '<a href="https://www.thenrai.in" target="_blank" rel="noopener" class="btn-brass" style="display:block;text-align:center;text-decoration:none;margin-top:10px;box-sizing:border-box">See all news on thenrai.in →</a></div>';
 }
 function screenStudentDashboard() {
   const student = state.me;
@@ -1122,19 +1421,60 @@ function screenStudentDashboard() {
     (student.fee_status === 'PAID' ? '<div style="font-size:12px;color:var(--forest)">✓ Settled for this cycle</div>' :
      (student.fee_status === 'PAYMENT_PENDING' || student.fee_status === 'CASH_PENDING') ? '<div style="font-size:12px;color:var(--brass)">⏳ Waiting for your coach to confirm ' + (student.pending_method || 'this payment') + '</div>' :
      '<button class="btn-brass" onclick="openPayment()">Pay via UPI / Google Pay / Cash</button>') +
-    (myInvoices.length ? '<div style="margin-top:10px;border-top:1px dashed var(--line);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + myInvoices.length + ')</div>' +
+    (myInvoices.length ? '<div style="margin-top:10px;border-top:2px dashed var(--line-strong);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + myInvoices.length + ')</div>' +
       '<div style="max-height:150px;overflow-y:auto">' + myInvoices.map((i) => '<div class="log-row" style="padding:5px 0"><span style="cursor:pointer;font-size:11px;flex:1" onclick="viewInvoice(' + i.id + ')">' + i.invoice_number + '</span><span class="mono-sm" style="color:var(--paper-dim);margin-right:6px">' + new Date(i.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</span><button class="icon-btn small" onclick="viewInvoice(' + i.id + ')" title="View / download">' + icon('rupee', 10) + '</button></div>').join('') + '</div></div>' : '') + '</div>' +
     '<div class="card"><div class="eyebrow" style="margin-bottom:10px">Attendance</div>' + ringGauge(student.attendance) +
     '<button class="btn-brass" style="margin-top:12px" onclick="markAttendance()">Mark today\'s attendance</button>' +
     (pending.length ? '<div style="font-size:11px;color:var(--brass);margin-top:8px;text-align:center">⏳ Pending your coach\'s approval</div>' : '') +
     '<div class="logbook" style="margin-top:10px">' + (log.slice(0, 4).map((a) => '<div class="log-row"><span class="mono-sm">' + a.requested_date + '</span><span style="font-size:12px;flex:1">Attendance</span>' + attStamp(a.status) + '</div>').join('') || '<div style="font-size:12px;color:var(--paper-dim)">No attendance marked yet.</div>') + '</div></div>' +
-    '<div class="card span-2"><div class="eyebrow" style="margin-bottom:10px">Match performance</div>' + matchScoreSection(student.id, true) + '</div></div></div>' +
+    '<div class="card span-2"><div class="eyebrow" style="margin-bottom:10px">Match performance</div>' + matchScoreSection(student.id, true) + '</div>' +
+    studentInventorySection(state.cache.myCoach) + nraiNewsSection() + '</div></div>' +
     (state.paymentOpen ? paymentModal(student) : '') + (state.feeReminderOpen ? feeReminderModal(student) : '') + (state.invoiceOpenId ? invoiceModal(state.invoiceOpenId) : '');
 }
 
 function pathwayGroup(title, list, color) {
   return '<div style="margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span class="eyebrow" style="font-size:10.5px">' + title + '</span><span class="mono-sm" style="color:' + color + '">' + list.length + '</span></div>' +
     (list.length ? list.map((s) => '<div class="log-row" style="cursor:pointer;padding:4px 0" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-size:11.5px;flex:1">' + s.name + '</span></div>').join('') : '<div style="font-size:11px;color:var(--paper-dim)">None yet.</div>') + '</div>';
+}
+function studentInventoryRow(item) {
+  const open = state.requestFormItemId === item.id;
+  return '<div class="log-row" style="align-items:flex-start;flex-wrap:wrap">' +
+    '<div style="flex:1;min-width:120px"><div style="font-weight:600;font-size:12.5px">' + item.name + '</div><div style="font-size:10.5px;color:var(--paper-dim)">₹' + Number(item.unit_price).toLocaleString('en-IN') + ' each</div></div>' +
+    '<span class="mono-sm">' + item.quantity + ' in stock</span>' +
+    '<button class="chip ' + (open ? 'chip-active' : '') + '" style="padding:4px 8px" onclick="toggleRequestForm(' + item.id + ')" ' + (item.quantity <= 0 ? 'disabled' : '') + '>Request</button>' +
+    (open ? '<div style="width:100%;margin-top:8px;padding:8px;background:var(--line-soft);border-radius:6px">' +
+      '<input id="requestQty_' + item.id + '" class="text-input" type="number" min="1" max="' + item.quantity + '" placeholder="Quantity" style="margin-bottom:8px"/>' +
+      '<button class="btn-brass" onclick="submitRequestItem(' + item.id + ')">Send request</button>' +
+      '<div style="font-size:9.5px;color:var(--paper-dim);margin-top:6px">Your coach approves this before it\'s given and added to your next invoice.</div></div>' : '') +
+    '</div>';
+}
+function myIssueRow(iss) {
+  const badgeColor = iss.status === 'requested' ? 'var(--brass)' : iss.status === 'declined' ? 'var(--rust)' : (iss.invoiced ? 'var(--forest)' : 'var(--brass)');
+  const label = iss.status === 'requested' ? 'REQUESTED' : iss.status === 'declined' ? 'DECLINED' : (iss.invoiced ? 'BILLED' : 'AWAITING PAYMENT');
+  return '<div class="log-row"><span style="font-size:12px;flex:1">' + iss.item_name + ' × ' + iss.quantity + '</span><span class="stamp" style="--stamp-color:' + badgeColor + '">' + label + '</span></div>';
+}
+function studentInventorySection(coachMatch) {
+  if (!coachMatch) {
+    return '<div class="card span-2"><div class="eyebrow" style="margin-bottom:8px">Inventory</div><div style="font-size:12px;color:var(--paper-dim)">No coach has signed up for your category yet.</div></div>';
+  }
+  const available = (state.cache.inventory || []).filter((i) => i.quantity > 0);
+  const myIssues = state.cache.myIssues || [];
+  return '<div class="card span-2"><div class="eyebrow" style="margin-bottom:10px">Inventory — ' + (coachMatch.academy_name || coachMatch.name) + '</div>' +
+    '<div class="eyebrow" style="font-size:10px;margin-bottom:6px">Available to request</div>' +
+    (available.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim);margin-bottom:10px">Nothing in stock right now.</div>' :
+      '<div class="logbook" style="margin-bottom:12px">' + available.map((i) => studentInventoryRow(i)).join('') + '</div>') +
+    '<div class="eyebrow" style="font-size:10px;margin-bottom:6px">Your items</div>' +
+    (myIssues.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim)">Nothing requested or issued yet.</div>' :
+      '<div class="logbook">' + myIssues.map((i) => myIssueRow(i)).join('') + '</div>') +
+    '</div>';
+}
+function itemRequestsCard(requests) {
+  return '<div class="card" style="' + (requests.length ? 'border-color:var(--brass)' : '') + '"><div class="eyebrow" style="margin-bottom:10px">Item requests</div>' +
+    (requests.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim)">No pending requests.</div>' :
+      requests.map((r) => {
+        const st = state.cache.students.find((s) => s.id === r.student_id);
+        return '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + (st ? st.name : '—') + '</span><span style="font-size:11.5px;color:var(--paper-dim)">' + r.item_name + ' × ' + r.quantity + '</span><button class="chip chip-active" style="padding:4px 8px" onclick="approveRequest(' + r.id + ')">Approve</button><button class="chip" style="padding:4px 8px" onclick="declineRequest(' + r.id + ')">Decline</button></div>';
+      }).join('')) + '</div>';
 }
 function inventoryItemRow(item, myStudents) {
   const issueOpen = state.issueFormItemId === item.id;
@@ -1171,10 +1511,11 @@ function screenCoachDashboard() {
       dueOrOverdue.map((s) => '<div class="log-row" style="cursor:pointer" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-weight:600;font-size:12px;flex:1">' + s.name + '</span><span class="mono-sm">Due ' + s.due_date + '</span>' + stamp(s.fee_status, s.pending_method) + '</div>').join('')) + '</div>' +
     '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">Shooter pathway (' + myStudents.length + ' students)</span></div><div class="card">' +
       pathwayGroup('National Qualified', nationalQualified, 'var(--forest)') + pathwayGroup('ISSF — did not qualify Nationals yet', issfNotQualified, 'var(--brass)') + pathwayGroup('NR — new shooters', nrShooters, 'var(--rust)') + '</div></div>' +
+    '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">Item requests</span></div>' + itemRequestsCard(state.cache.itemRequests || []) + '</div>' +
     '<div class="span-2"><div class="section-head"><span class="eyebrow">Inventory</span></div><div class="card">' +
       (state.cache.inventory.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim);margin-bottom:10px">No items yet — add your first below.</div>' :
         '<div class="logbook" style="margin-bottom:12px">' + state.cache.inventory.map((i) => inventoryItemRow(i, myStudents)).join('') + '</div>') +
-      '<div style="border-top:1px dashed var(--line);padding-top:10px">' +
+      '<div style="border-top:2px dashed var(--line-strong);padding-top:10px">' +
         '<div class="eyebrow" style="margin-bottom:6px">Add stock</div>' +
         '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:6px">If an item with this name already exists, the quantity is added to it.</div>' +
         '<input id="invItemName" class="text-input" placeholder="e.g. Match Grade Pellets (0.177, 500 pcs)" style="margin-bottom:6px"/>' +
@@ -1200,7 +1541,7 @@ function studentDetailModal() {
     ((s.fee_status === 'CASH_PENDING' || s.fee_status === 'PAYMENT_PENDING') ? '<button class="chip chip-active" onclick="confirmPayment(\'' + s.id + '\')">Confirm ' + (s.pending_method || 'cash') + ' received</button>' : '') +
     (s.shooter_category ? '<span class="chip" style="cursor:default">' + s.shooter_category + ' shooter</span>' : '') +
     '<button class="chip ' + (s.national_qualified ? 'chip-active' : '') + '" onclick="toggleNationalQualified(\'' + s.id + '\')">' + (s.national_qualified ? '✓ National Qualified' : 'Mark National Qualified') + '</button></div>' +
-    (invs.length ? '<div style="margin-bottom:12px;border-top:1px dashed var(--line);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + invs.length + ')</div>' +
+    (invs.length ? '<div style="margin-bottom:12px;border-top:2px dashed var(--line-strong);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + invs.length + ')</div>' +
       '<div style="max-height:120px;overflow-y:auto">' + invs.map((i) => '<div class="log-row" style="padding:5px 0"><span style="cursor:pointer;font-size:11px;flex:1" onclick="viewInvoice(' + i.id + ')">' + i.invoice_number + '</span><span class="mono-sm" style="color:var(--paper-dim)">' + new Date(i.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</span></div>').join('') + '</div></div>' : '') +
     ringGauge(s.attendance, 60) + '<div style="margin-top:14px">' + matchScoreSection(s.id, false) + '</div></div></div>' +
     (state.invoiceOpenId ? invoiceModal(state.invoiceOpenId) : '');
@@ -1239,19 +1580,21 @@ function screenAdminDashboard() {
 }
 
 function screenLoading() {
-  return '<div class="splash target-watermark" style="text-align:center"><div class="brand-center pulse-loading">' + icon('crosshair', 36, 'var(--brass)') +
+  return '<div class="splash target-watermark" style="text-align:center"><div class="brand-center pulse-loading"><span class="brand-icon-ring">' + icon('crosshair', 36, 'var(--brass)') + '</span>' +
     '<div class="eyebrow" style="margin-top:14px">Loading…</div></div></div>';
 }
 
 function App() {
+  let screenHtml;
   switch (state.screen) {
-    case 'LOADING': return screenLoading();
-    case 'AUTH': return screenAuth();
-    case 'STUDENT_DASHBOARD': return screenStudentDashboard();
-    case 'COACH_DASHBOARD': return screenCoachDashboard();
-    case 'ADMIN_DASHBOARD': return screenAdminDashboard();
-    default: return screenAuth();
+    case 'LOADING': screenHtml = screenLoading(); break;
+    case 'AUTH': screenHtml = screenAuth(); break;
+    case 'STUDENT_DASHBOARD': screenHtml = screenStudentDashboard(); break;
+    case 'COACH_DASHBOARD': screenHtml = screenCoachDashboard(); break;
+    case 'ADMIN_DASHBOARD': screenHtml = screenAdminDashboard(); break;
+    default: screenHtml = screenAuth();
   }
+  return toastBanner() + screenHtml;
 }
 
 render();

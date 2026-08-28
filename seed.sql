@@ -1,0 +1,10 @@
+-- Seed data for local development / preview branches.
+--
+-- This runs automatically when Supabase spins up a preview branch for a
+-- pull request, or when you run `supabase db reset` locally. Range Ledger's
+-- data is created through the app itself (sign-up flows), so there's
+-- nothing seeded by default — add INSERT statements here if you want a
+-- preview branch to start with sample students/coaches for testing.
+--
+-- Example:
+-- insert into profiles (id, role, name) values ('00000000-0000-0000-0000-000000000001', 'admin', 'Test Admin');
