@@ -1,0 +1,19 @@
+{
+  "name": "Range Ledger — Shooting Academy",
+  "short_name": "Range Ledger",
+  "description": "Fees, invoices, attendance, match calendar, and performance tracking for a precision shooting academy.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EAF2FB",
+  "theme_color": "#EAF2FB",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23EAF2FB' stroke='%231D6FE0' stroke-width='1.6' stroke-linecap='round'%3E%3Crect width='24' height='24' rx='5' fill='%23EAF2FB'/%3E%3Ccircle cx='12' cy='12' r='7.5'/%3E%3Cline x1='12' y1='3' x2='12' y2='6'/%3E%3Cline x1='12' y1='18' x2='12' y2='21'/%3E%3Cline x1='3' y1='12' x2='6' y2='12'/%3E%3Cline x1='18' y1='12' x2='21' y2='12'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
