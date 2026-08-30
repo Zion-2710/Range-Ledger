@@ -420,6 +420,9 @@ const state = {
   loadError: null,
   toast: null,
   coachDirectory: [],
+  broadcastForm: { message: '', templateTitle: '', audienceRole: 'student', audienceCategory: '', audienceFeeStatus: '', targetCoachId: '', channel: 'app' },
+  lastBroadcastRecipients: [],
+  lastBroadcastMessage: '',
   signinForm: { email: '', password: '' },
   signupForm: {
     name: '', email: '', password: '', phone: '', weapon: 'Air Rifle 10m', coachId: '', coachNameFallback: '',
@@ -835,6 +838,138 @@ async function fetchAttendanceRequests() { const { data } = await sb.from('atten
 async function fetchAllInvoices() { const { data } = await sb.from('invoices').select('*').order('paid_at', { ascending: false }); state.cache.invoices = data || []; }
 async function fetchMyInvoices(studentId) { const { data } = await sb.from('invoices').select('*').eq('student_id', studentId).order('paid_at', { ascending: false }); return data || []; }
 async function fetchInventory(coachId) { const { data } = await sb.from('inventory_items').select('*').eq('coach_id', coachId).order('name'); state.cache.inventory = data || []; }
+async function fetchTemplates() { const { data } = await sb.from('notification_templates').select('*').order('created_at', { ascending: false }); state.cache.templates = data || []; }
+async function fetchMyBroadcasts() { const { data } = await sb.from('notification_broadcasts').select('*').order('created_at', { ascending: false }); state.cache.broadcasts = data || []; }
+function applyTemplateVars(text, vars) {
+  return text.replace(/\{(\w+)\}/g, (m, key) => (vars[key] !== undefined && vars[key] !== null ? vars[key] : m));
+}
+function getBroadcastRecipients(audienceRole, audienceCategory, audienceFeeStatus, targetCoachId) {
+  let pool = [];
+  if (audienceRole === 'student' || audienceRole === 'all') {
+    let list = state.cache.students || [];
+    if (targetCoachId) list = list.filter((s) => s.coach_id === targetCoachId);
+    if (audienceCategory) list = list.filter((s) => s.category === audienceCategory);
+    if (audienceFeeStatus) list = list.filter((s) => s.fee_status === audienceFeeStatus);
+    pool = pool.concat(list.map((s) => ({ id: s.id, name: s.name, phone: s.phone, type: 'student' })));
+  }
+  if (audienceRole === 'coach' || audienceRole === 'all') {
+    pool = pool.concat((state.cache.coaches || []).map((c) => ({ id: c.id, name: c.name, phone: null, type: 'coach' })));
+  }
+  return pool;
+}
+async function sendBroadcast() {
+  if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
+  const f = state.broadcastForm;
+  const message = f.message.trim();
+  if (!message) { showToast('Please write a message.'); return; }
+  const isAdmin = state.profile.role === 'admin';
+  const targetCoachId = isAdmin ? (f.targetCoachId || null) : state.me.id;
+  const recipients = getBroadcastRecipients(f.audienceRole, f.audienceCategory || null, f.audienceFeeStatus || null, targetCoachId);
+  if (recipients.length === 0) { showToast('No matching recipients found for that audience.'); return; }
+
+  const { error } = await sb.from('notification_broadcasts').insert({
+    message, audience_role: f.audienceRole, audience_category: f.audienceCategory || null,
+    audience_fee_status: f.audienceFeeStatus || null, target_coach_id: targetCoachId,
+    channel: f.channel, recipient_count: recipients.length, sent_by: state.me.id, sent_by_name: state.me.name,
+  });
+  if (error) { showToast('Could not send broadcast: ' + error.message); return; }
+
+  await fetchMyBroadcasts();
+  state.lastBroadcastRecipients = f.channel === 'whatsapp' ? recipients.filter((r) => r.phone) : [];
+  state.lastBroadcastMessage = message;
+  state.broadcastForm.message = '';
+  render();
+  showToast(
+    f.channel === 'app' ? 'Sent to ' + recipients.length + ' recipient(s) — they\'ll see it in their dashboard.' :
+    f.channel === 'whatsapp' ? 'Recorded — click through the ' + state.lastBroadcastRecipients.length + ' WhatsApp link(s) below to actually send.' :
+    'Recorded as an SMS broadcast (' + recipients.length + ' recipients) — see the SMS integration note below to actually wire up sending.',
+    'success'
+  );
+}
+async function saveCurrentAsTemplate() {
+  if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
+  const title = state.broadcastForm.templateTitle.trim();
+  const body = state.broadcastForm.message.trim();
+  if (!title || !body) { showToast('Please write a message and give the template a title first.'); return; }
+  const { error } = await sb.from('notification_templates').insert({ title, body, created_by: state.me.id });
+  if (error) { showToast('Could not save template: ' + error.message); return; }
+  state.broadcastForm.templateTitle = '';
+  await fetchTemplates();
+  render();
+  showToast('Template saved.', 'success');
+}
+function applyTemplate(templateId) {
+  const t = (state.cache.templates || []).find((x) => String(x.id) === String(templateId));
+  if (t) { state.broadcastForm.message = t.body; render(); }
+}
+async function deleteTemplate(id) {
+  if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
+  await sb.from('notification_templates').delete().eq('id', id);
+  await fetchTemplates();
+  render();
+}
+function whatsAppRecipientList() {
+  if (!state.lastBroadcastRecipients || state.lastBroadcastRecipients.length === 0) return '';
+  return '<div style="border-top:2px dashed var(--line-strong);margin-top:14px;padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Click through to send via WhatsApp</div>' +
+    '<div style="font-size:10px;color:var(--paper-dim);margin-bottom:8px">WhatsApp only opens one chat at a time — tap each contact below.</div>' +
+    '<div class="logbook">' + state.lastBroadcastRecipients.map((r) => {
+      const personalized = applyTemplateVars(state.lastBroadcastMessage, { name: r.name });
+      const digits = (r.phone || '').replace(/\D/g, '');
+      const withCountry = digits.length === 10 ? '91' + digits : digits;
+      const link = 'https://wa.me/' + withCountry + '?text=' + encodeURIComponent(personalized);
+      return '<div class="log-row"><span style="font-size:12px;flex:1">' + escapeAttr(r.name) + '</span><a href="' + link + '" target="_blank" rel="noopener" class="chip chip-active" style="text-decoration:none">Open WhatsApp</a></div>';
+    }).join('') + '</div></div>';
+}
+function notificationHubSection() {
+  const isAdmin = state.profile.role === 'admin';
+  const f = state.broadcastForm;
+  const templates = state.cache.templates || [];
+  const myBroadcasts = (state.cache.broadcasts || []).filter((b) => b.sent_by === state.me.id).slice(0, 6);
+  const previewCount = getBroadcastRecipients(f.audienceRole, f.audienceCategory || null, f.audienceFeeStatus || null, isAdmin ? (f.targetCoachId || null) : state.me.id).length;
+
+  return '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">Notification hub</span></div><div class="card">' +
+    '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:10px">Send an announcement to a group — match schedules, range closures, new batch details. "In-app" delivers instantly; WhatsApp opens one chat per recipient to click through; SMS is an integration point that needs your own provider connected.</div>' +
+    (templates.length ? '<label class="field-label" style="margin-top:0">Start from a template</label><select class="text-input" onchange="applyTemplate(this.value)"><option value="">— choose a template —</option>' + templates.map((t) => '<option value="' + t.id + '">' + escapeAttr(t.title) + '</option>').join('') + '</select>' : '') +
+    '<label class="field-label" style="margin-top:8px">Message</label>' +
+    '<textarea id="broadcastMessage" class="text-input" rows="3" placeholder="e.g. Match schedule for {name}: Zonal trials on 14 Sep at the range. Please confirm attendance." oninput="state.broadcastForm.message=this.value">' + escapeAttr(f.message) + '</textarea>' +
+    '<div style="font-size:9.5px;color:var(--paper-dim);margin:2px 0 8px">Use {name} to personalize per recipient.</div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+    '<div style="flex:1;min-width:120px"><label class="field-label" style="margin-top:0">Audience</label><select id="bcRole" class="text-input" onchange="state.broadcastForm.audienceRole=this.value;render()">' +
+      '<option value="student"' + (f.audienceRole === 'student' ? ' selected' : '') + '>Shooters</option>' +
+      (isAdmin ? '<option value="coach"' + (f.audienceRole === 'coach' ? ' selected' : '') + '>Coaches</option><option value="all"' + (f.audienceRole === 'all' ? ' selected' : '') + '>Everyone</option>' : '') +
+      '</select></div>' +
+    (f.audienceRole !== 'coach' ? '<div style="flex:1;min-width:120px"><label class="field-label" style="margin-top:0">Category</label><select id="bcCategory" class="text-input" onchange="state.broadcastForm.audienceCategory=this.value;render()">' +
+      '<option value="">All categories</option><option value="Air Rifle 10m"' + (f.audienceCategory === 'Air Rifle 10m' ? ' selected' : '') + '>Air Rifle 10m</option><option value="Air Pistol 10m"' + (f.audienceCategory === 'Air Pistol 10m' ? ' selected' : '') + '>Air Pistol 10m</option></select></div>' : '') +
+    (f.audienceRole !== 'coach' ? '<div style="flex:1;min-width:120px"><label class="field-label" style="margin-top:0">Fee status</label><select id="bcFee" class="text-input" onchange="state.broadcastForm.audienceFeeStatus=this.value;render()">' +
+      '<option value="">Any</option><option value="DUE"' + (f.audienceFeeStatus === 'DUE' ? ' selected' : '') + '>Due</option><option value="OVERDUE"' + (f.audienceFeeStatus === 'OVERDUE' ? ' selected' : '') + '>Overdue</option><option value="PAID"' + (f.audienceFeeStatus === 'PAID' ? ' selected' : '') + '>Paid</option></select></div>' : '') +
+    (isAdmin ? '<div style="flex:1;min-width:140px"><label class="field-label" style="margin-top:0">Restrict to academy</label><select id="bcCoach" class="text-input" onchange="state.broadcastForm.targetCoachId=this.value;render()">' +
+      '<option value="">All academies</option>' + (state.cache.coaches || []).map((c) => '<option value="' + c.id + '">' + escapeAttr(c.academy_name || c.name) + '</option>').join('') + '</select></div>' : '') +
+    '</div>' +
+    '<label class="field-label">Channel</label><select id="bcChannel" class="text-input" onchange="state.broadcastForm.channel=this.value;render()">' +
+      '<option value="app"' + (f.channel === 'app' ? ' selected' : '') + '>In-app notification</option>' +
+      '<option value="whatsapp"' + (f.channel === 'whatsapp' ? ' selected' : '') + '>WhatsApp (click-through)</option>' +
+      '<option value="sms"' + (f.channel === 'sms' ? ' selected' : '') + '>SMS (integration point)</option>' +
+      '</select>' +
+    '<div style="font-size:11px;color:var(--paper-dim);margin:8px 0">Matches ' + previewCount + ' recipient' + (previewCount === 1 ? '' : 's') + ' right now.</div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">' +
+    '<input id="templateTitleInput" class="text-input" placeholder="Template title (optional, to save)" value="' + escapeAttr(f.templateTitle) + '" oninput="state.broadcastForm.templateTitle=this.value" style="flex:1;min-width:160px"/>' +
+    '<button class="chip" onclick="saveCurrentAsTemplate()">Save as template</button>' +
+    '</div>' +
+    '<button class="btn-brass" style="margin-top:10px" onclick="sendBroadcast()">Send broadcast</button>' +
+    (f.channel === 'sms' ? '<div style="margin-top:10px;padding:9px 10px;background:var(--line-soft);border-radius:6px;font-size:10.5px;color:var(--paper-dim)">SMS isn\'t wired to a real provider yet. To actually send: sign up with an SMS API (e.g. Twilio, MSG91), build a Supabase Edge Function that takes the recipient list and calls your provider\'s send API with the secret key stored server-side (never in this app\'s code), then trigger it after a broadcast is recorded here.</div>' : '') +
+    (templates.length ? '<div style="border-top:2px dashed var(--line-strong);margin-top:14px;padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Saved templates</div><div class="logbook">' +
+      templates.map((t) => '<div class="log-row"><span style="font-size:12px;flex:1">' + escapeAttr(t.title) + '</span><button class="icon-btn small" title="Delete" onclick="deleteTemplate(' + t.id + ')">' + icon('x', 10) + '</button></div>').join('') + '</div></div>' : '') +
+    (myBroadcasts.length ? '<div style="border-top:2px dashed var(--line-strong);margin-top:14px;padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Recent broadcasts you sent</div><div class="logbook">' +
+      myBroadcasts.map((b) => '<div class="log-row"><span style="font-size:11.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeAttr(b.message) + '</span><span class="mono-sm" style="color:var(--paper-dim);margin-right:6px">' + b.recipient_count + ' · ' + b.channel + '</span></div>').join('') + '</div></div>' : '') +
+    whatsAppRecipientList() +
+    '</div></div>';
+}
+function notificationsInboxCard() {
+  const items = state.cache.broadcasts || [];
+  if (items.length === 0) return '';
+  return '<div class="card span-2"><div class="eyebrow" style="margin-bottom:8px">Notifications</div>' +
+    '<div class="logbook">' + items.slice(0, 8).map((n) => '<div class="log-row" style="align-items:flex-start"><span style="font-size:12px;flex:1">' + escapeAttr(n.message) + '</span><span class="mono-sm" style="color:var(--paper-dim)">' + new Date(n.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</span></div>').join('') + '</div></div>';
+}
 async function fetchQualificationStandards() {
   const { data } = await sb.from('qualification_standards').select('*').order('cutoff_score');
   state.cache.qualificationStandards = data || [];
@@ -908,7 +1043,7 @@ async function refreshStudentData() {
   if (!state.me || state.screen !== 'STUDENT_DASHBOARD') return;
   const { data: freshMe } = await sb.from('students').select('*').eq('id', state.me.id).single();
   if (freshMe) state.me = freshMe;
-  await Promise.all([fetchReminders(), fetchMyIssues(state.me.id)]);
+  await Promise.all([fetchReminders(), fetchMyIssues(state.me.id), fetchMyBroadcasts()]);
   state.cache.myInvoices = await fetchMyInvoices(state.me.id);
   const pending = await sb.from('attendance_requests').select('*').eq('student_id', state.me.id);
   state.cache.myAttendance = pending.data || [];
@@ -921,12 +1056,13 @@ function setupStudentRealtime() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'students', filter: 'id=eq.' + state.me.id }, () => debounceRefresh(refreshStudentData))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_issues', filter: 'student_id=eq.' + state.me.id }, () => debounceRefresh(refreshStudentData))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: 'student_id=eq.' + state.me.id }, () => debounceRefresh(refreshStudentData))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notification_broadcasts' }, () => debounceRefresh(refreshStudentData))
     .subscribe();
 }
 
 async function refreshCoachData() {
   if (!state.me || state.screen !== 'COACH_DASHBOARD') return;
-  await Promise.all([fetchStudents(), fetchAttendanceRequests(), fetchInventory(state.me.id), fetchItemRequests(state.me.id)]);
+  await Promise.all([fetchStudents(), fetchAttendanceRequests(), fetchInventory(state.me.id), fetchItemRequests(state.me.id), fetchMyBroadcasts()]);
   render();
 }
 function setupCoachRealtime() {
@@ -935,6 +1071,7 @@ function setupCoachRealtime() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance_requests' }, () => debounceRefresh(refreshCoachData))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_issues' }, () => debounceRefresh(refreshCoachData))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => debounceRefresh(refreshCoachData))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notification_broadcasts' }, () => debounceRefresh(refreshCoachData))
     .subscribe();
 }
 
@@ -962,6 +1099,7 @@ async function enterStudentDashboard() {
       loadScoresFor(state.me.id),
       fetchMyIssues(state.me.id),
       fetchQualificationStandards(),
+      fetchMyBroadcasts(),
       coachMatch ? fetchInventory(coachMatch.id) : Promise.resolve(),
     ]);
     state.cache.myInvoices = await fetchMyInvoices(state.me.id);
@@ -979,7 +1117,7 @@ async function enterStudentDashboard() {
 async function enterCoachDashboard() {
   state.screen = 'LOADING'; render();
   try {
-    await Promise.all([fetchStudents(), fetchReminders(), fetchAttendanceRequests(), fetchInventory(state.me.id), fetchItemRequests(state.me.id), fetchQualificationStandards()]);
+    await Promise.all([fetchStudents(), fetchReminders(), fetchAttendanceRequests(), fetchInventory(state.me.id), fetchItemRequests(state.me.id), fetchQualificationStandards(), fetchTemplates(), fetchMyBroadcasts()]);
   } catch (err) {
     state.loadError = 'Could not load your dashboard: ' + (err && err.message ? err.message : 'check your internet connection.');
   }
@@ -991,7 +1129,7 @@ async function enterCoachDashboard() {
 async function enterAdminDashboard() {
   state.screen = 'LOADING'; render();
   try {
-    await Promise.all([fetchStudents(), fetchCoaches(), fetchReminders(), fetchAttendanceRequests(), fetchAllInvoices(), fetchQualificationStandards()]);
+    await Promise.all([fetchStudents(), fetchCoaches(), fetchReminders(), fetchAttendanceRequests(), fetchAllInvoices(), fetchQualificationStandards(), fetchTemplates(), fetchMyBroadcasts()]);
   } catch (err) {
     state.loadError = 'Could not load the dashboard: ' + (err && err.message ? err.message : 'check your internet connection.');
   }
@@ -1943,7 +2081,7 @@ function screenStudentDashboard() {
     '<div class="logbook" style="margin-top:10px">' + (log.slice(0, 4).map((a) => '<div class="log-row"><span class="mono-sm">' + a.requested_date + '</span><span style="font-size:12px;flex:1">Attendance</span>' + attStamp(a.status) + '</div>').join('') || '<div style="font-size:12px;color:var(--paper-dim)">No attendance marked yet.</div>') + '</div></div>' +
     '<div class="card span-2"><div class="eyebrow" style="margin-bottom:10px">Match performance</div>' + matchScoreSection(student.id, false) + '</div>' +
     qualificationStatusCard(student.id, student.category, false, null) +
-    studentInventorySection(state.cache.myCoach) + nraiNewsSection() + '</div></div>' +
+    studentInventorySection(state.cache.myCoach) + notificationsInboxCard() + nraiNewsSection() + '</div></div>' +
     (state.paymentOpen ? paymentModal(student) : '') + (state.feeReminderOpen ? feeReminderModal(student) : '') + (state.invoiceOpenId ? invoiceModal(state.invoiceOpenId) : '');
 }
 
@@ -2035,6 +2173,7 @@ function screenCoachDashboard() {
     '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">Shooter pathway (' + myStudents.length + ' students)</span></div><div class="card">' +
       pathwayGroup('National Qualified', nationalQualified, 'var(--forest)') + pathwayGroup('ISSF — did not qualify Nationals yet', issfNotQualified, 'var(--brass)') + pathwayGroup('NR — new shooters', nrShooters, 'var(--rust)') + '</div></div>' +
     '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">Item requests</span></div>' + itemRequestsCard(state.cache.itemRequests || []) + '</div>' +
+    notificationHubSection() +
     '<div class="span-2"><div class="section-head"><span class="eyebrow">Inventory</span></div><div class="card">' +
       (state.cache.inventory.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim);margin-bottom:10px">No items yet — add your first below.</div>' :
         '<div class="logbook" style="margin-bottom:12px">' + state.cache.inventory.map((i) => inventoryItemRow(i, myStudents)).join('') + '</div>') +
@@ -2130,6 +2269,7 @@ function screenAdminDashboard() {
     '<div class="card"><div class="eyebrow" style="margin-bottom:8px">Coaches</div>' +
     (state.cache.coaches.length ? state.cache.coaches.map((c) => '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + c.name + '</span><span style="font-size:11px;color:var(--paper-dim)">' + c.specialization + '</span></div>').join('') : '<div style="font-size:12px;color:var(--paper-dim)">No coaches signed up yet.</div>') + '</div>' +
     qualificationAdminSection() +
+    notificationHubSection() +
     '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">All shooters</span></div>' +
     '<div class="card" style="padding:0;overflow:hidden"><table class="ledger"><thead><tr><th>Shooter</th><th>Category</th><th>Attend.</th><th>Fee</th></tr></thead><tbody>' +
     (students.length ? students.map((s) => '<tr onclick="openAdminDetail(\'' + s.id + '\')"><td><div style="font-weight:600">' + s.name + '</div></td><td style="color:' + CATEGORIES[s.category].color + '">' + s.category + '</td><td><div class="mini-bar"><div class="mini-bar-fill" style="width:' + s.attendance + '%;background:' + (s.attendance >= 85 ? 'var(--forest)' : s.attendance >= 65 ? 'var(--brass)' : 'var(--rust)') + '"></div></div></td><td>' + stamp(s.fee_status, s.pending_method) + '</td></tr>').join('') : '<tr><td colspan="4" style="padding:16px;color:var(--paper-dim)">No shooters signed up yet.</td></tr>') +
