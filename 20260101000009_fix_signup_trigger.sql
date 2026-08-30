@@ -1,0 +1,118 @@
+-- =============================================================================
+-- Repair migration for "Database error saving new user" on signup.
+--
+-- That error means the handle_new_user trigger (which fires on every new
+-- auth.users row) threw an exception. The trigger has been redefined 7
+-- times across migrations 0001–0008, each adding new fields — if any one
+-- of those was skipped, run out of order, or failed partway, the LATEST
+-- trigger logic can end up referencing a column that doesn't actually
+-- exist yet in your database, which fails every single signup with this
+-- generic error.
+--
+-- This migration is safe to run regardless of which earlier migrations
+-- you've actually applied: every column below uses "add column if not
+-- exists" (so nothing breaks if it's already there), and the trigger is
+-- rewritten once more to be defensive against bad/missing metadata on
+-- every field, not just coach_id.
+-- =============================================================================
+
+alter table students add column if not exists coach_name text;
+alter table students add column if not exists coach_id uuid references coaches(id);
+alter table students add column if not exists national_qualified boolean not null default false;
+alter table students add column if not exists nrai_shooter_id text;
+alter table students add column if not exists nrai_email text;
+alter table students add column if not exists next_due_on date;
+
+alter table coaches add column if not exists academy_name text;
+alter table coaches add column if not exists academy_address text;
+alter table coaches add column if not exists lane_reservation boolean not null default false;
+alter table coaches add column if not exists academy_upi_id text;
+alter table coaches add column if not exists academy_gstin text;
+alter table coaches add column if not exists gst_percent numeric not null default 0;
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_role text := new.raw_user_meta_data->>'role';
+  v_coach_id uuid;
+  v_national_qualified boolean;
+  v_lane_reservation boolean;
+  v_gst_percent numeric;
+begin
+  -- Every cast below is wrapped defensively: if a metadata value is
+  -- missing, empty, or malformed in any way, fall back to a safe default
+  -- instead of throwing and failing the whole signup.
+  begin
+    v_coach_id := nullif(new.raw_user_meta_data->>'coach_id', '')::uuid;
+  exception when others then
+    v_coach_id := null;
+  end;
+
+  begin
+    v_national_qualified := coalesce(nullif(new.raw_user_meta_data->>'national_qualified', '')::boolean, false);
+  exception when others then
+    v_national_qualified := false;
+  end;
+
+  begin
+    v_lane_reservation := coalesce(nullif(new.raw_user_meta_data->>'lane_reservation', '')::boolean, false);
+  exception when others then
+    v_lane_reservation := false;
+  end;
+
+  begin
+    v_gst_percent := coalesce(nullif(new.raw_user_meta_data->>'gst_percent', '')::numeric, 0);
+  exception when others then
+    v_gst_percent := 0;
+  end;
+
+  insert into public.profiles (id, role, name)
+  values (new.id, coalesce(v_role, 'student'), coalesce(new.raw_user_meta_data->>'name', ''))
+  on conflict (id) do nothing;
+
+  if v_role = 'student' then
+    insert into public.students (id, name, phone, email, category, shooter_category, coach_name, coach_id, national_qualified, nrai_shooter_id, nrai_email)
+    values (
+      new.id,
+      coalesce(new.raw_user_meta_data->>'name', ''),
+      new.raw_user_meta_data->>'phone',
+      new.email,
+      coalesce(nullif(new.raw_user_meta_data->>'category', ''), 'Air Rifle 10m'),
+      coalesce(nullif(new.raw_user_meta_data->>'shooter_category', ''), 'ISSF'),
+      new.raw_user_meta_data->>'coach_name',
+      v_coach_id,
+      v_national_qualified,
+      new.raw_user_meta_data->>'nrai_shooter_id',
+      new.raw_user_meta_data->>'nrai_email'
+    )
+    on conflict (id) do nothing;
+  elsif v_role = 'coach' then
+    insert into public.coaches (id, name, specialization, academy_name, academy_address, lane_reservation, academy_upi_id, academy_gstin, gst_percent)
+    values (
+      new.id,
+      coalesce(new.raw_user_meta_data->>'name', ''),
+      coalesce(nullif(new.raw_user_meta_data->>'specialization', ''), 'Air Rifle 10m'),
+      new.raw_user_meta_data->>'academy_name',
+      new.raw_user_meta_data->>'academy_address',
+      v_lane_reservation,
+      new.raw_user_meta_data->>'academy_upi_id',
+      nullif(new.raw_user_meta_data->>'academy_gstin', ''),
+      v_gst_percent
+    )
+    on conflict (id) do nothing;
+  end if;
+
+  return new;
+exception when others then
+  -- Last resort: log what actually went wrong instead of just failing
+  -- silently with the generic "Database error saving new user" message.
+  -- Check Supabase's Postgres logs (Logs & Analytics > Postgres Logs) for
+  -- a line starting with "handle_new_user failed:" if signups still fail
+  -- after this migration — that will show the real underlying reason.
+  raise warning 'handle_new_user failed: % — %', sqlstate, sqlerrm;
+  return new;
+end;
+$$;
