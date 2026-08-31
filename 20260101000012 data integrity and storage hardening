@@ -1,0 +1,123 @@
+-- =============================================================================
+-- Data integrity constraints + storage hardening.
+--
+-- Each constraint is added inside its own DO block that checks
+-- pg_constraint first -- the same plain pattern already used successfully
+-- elsewhere in this project (e.g. the pg_cron job check in migration
+-- 20260101000008), avoiding any custom helper function.
+-- =============================================================================
+ 
+alter table coaches add column if not exists gst_percent numeric not null default 0;
+alter table coaches add column if not exists academy_gstin text;
+alter table invoices add column if not exists subtotal numeric;
+alter table invoices add column if not exists gst_percent numeric not null default 0;
+alter table invoices add column if not exists gst_amount numeric not null default 0;
+alter table students add column if not exists next_due_on date;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'inventory_items_quantity_nonneg') then
+    alter table inventory_items add constraint inventory_items_quantity_nonneg check (quantity >= 0) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'inventory_items_price_nonneg') then
+    alter table inventory_items add constraint inventory_items_price_nonneg check (unit_price >= 0) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'inventory_issues_quantity_positive') then
+    alter table inventory_issues add constraint inventory_issues_quantity_positive check (quantity > 0) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'inventory_issues_unit_price_nonneg') then
+    alter table inventory_issues add constraint inventory_issues_unit_price_nonneg check (unit_price >= 0) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'qualification_standards_cutoff_positive') then
+    alter table qualification_standards add constraint qualification_standards_cutoff_positive check (cutoff_score > 0) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'qualification_standards_shots_positive') then
+    alter table qualification_standards add constraint qualification_standards_shots_positive check (shots > 0) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'coaches_gst_percent_range') then
+    alter table coaches add constraint coaches_gst_percent_range check (gst_percent >= 0 and gst_percent <= 100) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'invoices_amount_nonneg') then
+    alter table invoices add constraint invoices_amount_nonneg check (amount >= 0) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'invoices_gst_percent_range') then
+    alter table invoices add constraint invoices_gst_percent_range check (gst_percent >= 0 and gst_percent <= 100) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'invoices_gst_amount_nonneg') then
+    alter table invoices add constraint invoices_gst_amount_nonneg check (gst_amount >= 0) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'match_scores_score_nonneg') then
+    alter table match_scores add constraint match_scores_score_nonneg check (score >= 0) not valid;
+  end if;
+end $$;
+ 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'notification_broadcasts_recipient_count_nonneg') then
+    alter table notification_broadcasts add constraint notification_broadcasts_recipient_count_nonneg check (recipient_count >= 0) not valid;
+  end if;
+end $$;
+ 
+-- Validate each one now, so a violation from existing bad data shows up
+-- here in the SQL editor output rather than staying silently un-checked.
+alter table inventory_items validate constraint inventory_items_quantity_nonneg;
+alter table inventory_items validate constraint inventory_items_price_nonneg;
+alter table inventory_issues validate constraint inventory_issues_quantity_positive;
+alter table inventory_issues validate constraint inventory_issues_unit_price_nonneg;
+alter table qualification_standards validate constraint qualification_standards_cutoff_positive;
+alter table qualification_standards validate constraint qualification_standards_shots_positive;
+alter table coaches validate constraint coaches_gst_percent_range;
+alter table invoices validate constraint invoices_amount_nonneg;
+alter table invoices validate constraint invoices_gst_percent_range;
+alter table invoices validate constraint invoices_gst_amount_nonneg;
+alter table match_scores validate constraint match_scores_score_nonneg;
+alter table notification_broadcasts validate constraint notification_broadcasts_recipient_count_nonneg;
+ 
+-- =============================================================================
+-- Avatars storage: server-side size and type limits.
+-- =============================================================================
+update storage.buckets
+set file_size_limit = 2097152,
+    allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']
+where id = 'avatars';
+ 
