@@ -1,41 +1,105 @@
 -- =============================================================================
 -- Data integrity constraints + storage hardening.
 --
--- RLS controls WHO can write to a table, but says nothing about WHAT
--- values are valid — someone could bypass this app's UI entirely and call
--- the Supabase REST API directly with a negative price, an absurd GST
--- percentage, or a zero-quantity item request. These CHECK constraints
--- make invalid data impossible to insert regardless of how the request
--- was made, not just inconvenient to enter through the app's own forms.
---
--- Existing rows are left alone even if they'd violate a new constraint
--- (Postgres only enforces CHECK on new/updated rows going forward) — if
--- any of the "not valid" additions below report a violation, that's
--- telling you real bad data already exists and is worth a manual look.
+-- Each constraint is added inside its own DO block that checks
+-- pg_constraint first -- the same plain pattern already used successfully
+-- elsewhere in this project (e.g. the pg_cron job check in migration
+-- 20260101000008), avoiding any custom helper function.
 -- =============================================================================
 
-alter table inventory_items add constraint inventory_items_quantity_nonneg check (quantity >= 0) not valid;
-alter table inventory_items add constraint inventory_items_price_nonneg check (unit_price >= 0) not valid;
+alter table coaches add column if not exists gst_percent numeric not null default 0;
+alter table coaches add column if not exists academy_gstin text;
+alter table invoices add column if not exists subtotal numeric;
+alter table invoices add column if not exists gst_percent numeric not null default 0;
+alter table invoices add column if not exists gst_amount numeric not null default 0;
+alter table students add column if not exists next_due_on date;
 
-alter table inventory_issues add constraint inventory_issues_quantity_positive check (quantity > 0) not valid;
-alter table inventory_issues add constraint inventory_issues_unit_price_nonneg check (unit_price >= 0) not valid;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'inventory_items_quantity_nonneg') then
+    alter table inventory_items add constraint inventory_items_quantity_nonneg check (quantity >= 0) not valid;
+  end if;
+end $$;
 
-alter table qualification_standards add constraint qualification_standards_cutoff_positive check (cutoff_score > 0) not valid;
-alter table qualification_standards add constraint qualification_standards_shots_positive check (shots > 0) not valid;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'inventory_items_price_nonneg') then
+    alter table inventory_items add constraint inventory_items_price_nonneg check (unit_price >= 0) not valid;
+  end if;
+end $$;
 
-alter table coaches add constraint coaches_gst_percent_range check (gst_percent >= 0 and gst_percent <= 100) not valid;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'inventory_issues_quantity_positive') then
+    alter table inventory_issues add constraint inventory_issues_quantity_positive check (quantity > 0) not valid;
+  end if;
+end $$;
 
-alter table invoices add constraint invoices_amount_nonneg check (amount >= 0) not valid;
-alter table invoices add constraint invoices_gst_percent_range check (gst_percent >= 0 and gst_percent <= 100) not valid;
-alter table invoices add constraint invoices_gst_amount_nonneg check (gst_amount >= 0) not valid;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'inventory_issues_unit_price_nonneg') then
+    alter table inventory_issues add constraint inventory_issues_unit_price_nonneg check (unit_price >= 0) not valid;
+  end if;
+end $$;
 
-alter table match_scores add constraint match_scores_score_nonneg check (score >= 0) not valid;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'qualification_standards_cutoff_positive') then
+    alter table qualification_standards add constraint qualification_standards_cutoff_positive check (cutoff_score > 0) not valid;
+  end if;
+end $$;
 
-alter table notification_broadcasts add constraint notification_broadcasts_recipient_count_nonneg check (recipient_count >= 0) not valid;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'qualification_standards_shots_positive') then
+    alter table qualification_standards add constraint qualification_standards_shots_positive check (shots > 0) not valid;
+  end if;
+end $$;
 
--- Validate each constraint now, so you actually see it in the SQL editor
--- output if any existing row already violates one — rather than the
--- constraint just silently applying to future writes only.
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'coaches_gst_percent_range') then
+    alter table coaches add constraint coaches_gst_percent_range check (gst_percent >= 0 and gst_percent <= 100) not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'invoices_amount_nonneg') then
+    alter table invoices add constraint invoices_amount_nonneg check (amount >= 0) not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'invoices_gst_percent_range') then
+    alter table invoices add constraint invoices_gst_percent_range check (gst_percent >= 0 and gst_percent <= 100) not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'invoices_gst_amount_nonneg') then
+    alter table invoices add constraint invoices_gst_amount_nonneg check (gst_amount >= 0) not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'match_scores_score_nonneg') then
+    alter table match_scores add constraint match_scores_score_nonneg check (score >= 0) not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'notification_broadcasts_recipient_count_nonneg') then
+    alter table notification_broadcasts add constraint notification_broadcasts_recipient_count_nonneg check (recipient_count >= 0) not valid;
+  end if;
+end $$;
+
+-- Validate each one now, so a violation from existing bad data shows up
+-- here in the SQL editor output rather than staying silently un-checked.
 alter table inventory_items validate constraint inventory_items_quantity_nonneg;
 alter table inventory_items validate constraint inventory_items_price_nonneg;
 alter table inventory_issues validate constraint inventory_issues_quantity_positive;
@@ -50,12 +114,9 @@ alter table match_scores validate constraint match_scores_score_nonneg;
 alter table notification_broadcasts validate constraint notification_broadcasts_recipient_count_nonneg;
 
 -- =============================================================================
--- Avatars storage: server-side size and type limits, so the 1MB compression
--- in the app's own JS isn't the only thing standing between a user and
--- uploading a 200MB file or an .exe renamed to .jpg — this is enforced by
--- Supabase Storage itself regardless of what a client sends.
+-- Avatars storage: server-side size and type limits.
 -- =============================================================================
 update storage.buckets
-set file_size_limit = 2097152, -- 2MB raw ceiling (the app compresses to ~1MB client-side; this is a hard server-side backstop, not the target size)
+set file_size_limit = 2097152,
     allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']
 where id = 'avatars';
