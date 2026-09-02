@@ -1,0 +1,55 @@
+-- =============================================================================
+-- Repairs accounts left broken by earlier trigger issues: any profile with
+-- role='coach' or role='student' that has no matching row in coaches/
+-- students respectively (this is exactly what causes "Cannot read
+-- properties of null" crashes on login -- the app loads the profile,
+-- finds no matching coach/student record, and has nothing to show).
+--
+-- Rebuilds each missing row from auth.users.raw_user_meta_data, which
+-- Supabase keeps permanently from the original signup -- the same source
+-- the signup trigger itself reads from, so this produces the same result
+-- the trigger should have produced the first time.
+-- =============================================================================
+
+insert into coaches (id, name, specialization, academy_name, academy_address, lane_reservation, academy_upi_id, academy_gstin, gst_percent)
+select
+  p.id,
+  coalesce(p.name, u.raw_user_meta_data->>'name', ''),
+  coalesce(nullif(u.raw_user_meta_data->>'specialization', ''), 'Air Rifle 10m'),
+  u.raw_user_meta_data->>'academy_name',
+  u.raw_user_meta_data->>'academy_address',
+  coalesce((u.raw_user_meta_data->>'lane_reservation')::boolean, false),
+  u.raw_user_meta_data->>'academy_upi_id',
+  nullif(u.raw_user_meta_data->>'academy_gstin', ''),
+  coalesce(nullif(u.raw_user_meta_data->>'gst_percent', '')::numeric, 0)
+from profiles p
+join auth.users u on u.id = p.id
+where p.role = 'coach'
+  and not exists (select 1 from coaches c where c.id = p.id)
+on conflict (id) do nothing;
+
+insert into students (id, name, phone, email, category, shooter_category, coach_name, coach_id, national_qualified, nrai_shooter_id, nrai_email)
+select
+  p.id,
+  coalesce(p.name, u.raw_user_meta_data->>'name', ''),
+  u.raw_user_meta_data->>'phone',
+  u.email,
+  coalesce(nullif(u.raw_user_meta_data->>'category', ''), 'Air Rifle 10m'),
+  coalesce(nullif(u.raw_user_meta_data->>'shooter_category', ''), 'ISSF'),
+  u.raw_user_meta_data->>'coach_name',
+  nullif(u.raw_user_meta_data->>'coach_id', '')::uuid,
+  coalesce((u.raw_user_meta_data->>'national_qualified')::boolean, false),
+  u.raw_user_meta_data->>'nrai_shooter_id',
+  u.raw_user_meta_data->>'nrai_email'
+from profiles p
+join auth.users u on u.id = p.id
+where p.role = 'student'
+  and not exists (select 1 from students s where s.id = p.id)
+on conflict (id) do nothing;
+
+-- Run this after applying, to confirm nothing is still missing:
+--   select p.id, p.role, p.name from profiles p
+--   left join coaches c on c.id = p.id and p.role = 'coach'
+--   left join students s on s.id = p.id and p.role = 'student'
+--   where (p.role = 'coach' and c.id is null) or (p.role = 'student' and s.id is null);
+-- An empty result means every account now has its matching row.

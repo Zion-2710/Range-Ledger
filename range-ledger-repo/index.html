@@ -434,6 +434,8 @@ const state = {
   toast: null,
   confirmDialog: null,
   showPrivacyNotice: false,
+  showAllSessions: false,
+  allSessionsStudentId: null,
   coachDirectory: [],
   broadcastForm: { message: '', templateTitle: '', audienceRole: 'student', audienceCategory: '', audienceFeeStatus: '', targetCoachId: '', channel: 'app' },
   lastBroadcastRecipients: [],
@@ -702,12 +704,20 @@ async function fetchProfile() {
 async function routeAfterAuth() {
   if (state.profile.role === 'student') {
     const { data, error } = await sb.from('students').select('*').eq('id', state.profile.id).single();
-    if (error) { showToast('Signed in, but could not load your student record: ' + error.message + ' (if this is a test account from before a recent fix, ask whoever manages the database to run the backfill migration.)'); }
+    if (error || !data) {
+      await logout();
+      showToast('Signed in, but your shooter profile hasn\'t been set up correctly — please contact your coach or admin to fix this.');
+      return;
+    }
     state.me = data;
     await enterStudentDashboard();
   } else if (state.profile.role === 'coach') {
     const { data, error } = await sb.from('coaches').select('*').eq('id', state.profile.id).single();
-    if (error) { showToast('Signed in, but could not load your coach record: ' + error.message + ' (if this is a test account from before a recent fix, ask whoever manages the database to run the backfill migration.)'); }
+    if (error || !data) {
+      await logout();
+      showToast('Signed in, but your coach profile hasn\'t been set up correctly — please contact your admin to fix this.');
+      return;
+    }
     state.me = data;
     await enterCoachDashboard();
   } else {
@@ -1073,6 +1083,20 @@ function getQualificationStatus(studentId, category) {
     return Object.assign({}, s, { best, achieved: best !== null && best >= s.cutoff_score });
   }).sort((a, b) => a.cutoff_score - b.cutoff_score);
 }
+async function saveCoachEvaluation(studentId) {
+  if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
+  const textarea = document.getElementById('coachEvalInput_' + studentId);
+  const text = textarea.value.trim();
+  try {
+    const { error } = await sb.from('students').update({ coach_evaluation: text || null }).eq('id', studentId);
+    if (error) throw error;
+    const s = state.cache.students.find((x) => x.id === studentId);
+    if (s) s.coach_evaluation = text || null;
+    showToast('Evaluation saved.', 'success');
+  } catch (err) {
+    showToast('Could not save evaluation — ' + (err && err.message ? err.message : 'please try again.'));
+  }
+}
 async function markNationalQualifiedFromStandard(studentId) {
   if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
   try {
@@ -1290,7 +1314,47 @@ function performanceAnalysis(data, max) {
   const consistency = stdDev < max * 0.03 ? 'Very consistent' : stdDev < max * 0.06 ? 'Some variation' : 'High variation';
   return { avg, best, trend, trendColor, consistency };
 }
-function scorePanel(studentId, mode, allowLogging) {
+function getAllSessions(studentId) {
+  const all = (state.scoresByStudent[studentId] || []).slice();
+  const bestMap = {};
+  all.forEach((s) => {
+    const key = s.shots + '-' + s.mode;
+    if (bestMap[key] === undefined || s.score > bestMap[key]) bestMap[key] = s.score;
+  });
+  return all.map((s) => Object.assign({}, s, { isBest: s.score === bestMap[s.shots + '-' + s.mode] }))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+function combinedTrendData(studentId) {
+  const sessions = getAllSessions(studentId).slice().reverse();
+  return sessions.map((s, i) => ({
+    session: 'S' + (i + 1),
+    score: (Number(s.score) / (s.mode === 'decimal' ? MAX_DECIMAL[s.shots] : MAX_INTEGER[s.shots])) * 100,
+  }));
+}
+function openAllSessions(studentId) { state.showAllSessions = true; state.allSessionsStudentId = studentId; render(); }
+function closeAllSessions() { state.showAllSessions = false; render(); }
+function allSessionsModal() {
+  if (!state.showAllSessions) return '';
+  const studentId = state.allSessionsStudentId;
+  const sessions = getAllSessions(studentId);
+  const trend = combinedTrendData(studentId);
+  return '<div class="modal-overlay" onclick="if(event.target===this) closeAllSessions()"><div class="modal-card" style="max-width:480px;max-height:80vh;overflow-y:auto;text-align:left">' +
+    '<div class="eyebrow" style="margin-bottom:10px">All logged sessions</div>' +
+    (sessions.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim)">No sessions logged yet.</div>' : (
+      '<div style="font-size:9.5px;color:var(--paper-dim);margin-bottom:4px">Overall trend — every session as a % of its own maximum, so different shot counts and scoring modes can sit on one line.</div>' +
+      lineChartSvg(trend, 100, 40) +
+      '<div class="logbook" style="margin-top:10px">' + sessions.map((s) =>
+        '<div class="log-row" style="align-items:flex-start"><div style="flex:1;min-width:0">' +
+        '<div style="font-size:12px;font-weight:600">' + escapeAttr(s.session_name || 'Practice session') + '</div>' +
+        '<div style="font-size:10px;color:var(--paper-dim)">' + new Date(s.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + s.shots + ' shots · ' + (s.mode === 'decimal' ? 'Decimal' : 'Whole') + '</div></div>' +
+        '<div style="text-align:right"><div class="mono-sm" style="font-size:13px">' + (s.mode === 'decimal' ? Number(s.score).toFixed(1) : Math.round(s.score)) + '</div>' +
+        (s.isBest ? '<span class="stamp" style="--stamp-color:var(--forest)">' + icon('check', 9, 'var(--forest)') + ' BEST</span>' : '<span style="font-size:9.5px;color:var(--paper-dim)">Completed</span>') + '</div></div>'
+      ).join('') + '</div>'
+    )) +
+    '<button class="btn-brass" style="margin-top:14px" onclick="closeAllSessions()">Close</button>' +
+    '</div></div>';
+}
+function scorePanel(studentId, mode) {
   const shots = Number(state.chartMatchType);
   const max = mode === 'decimal' ? MAX_DECIMAL[shots] : MAX_INTEGER[shots];
   const perShot = mode === 'decimal' ? 10.9 : 10;
@@ -1301,35 +1365,67 @@ function scorePanel(studentId, mode, allowLogging) {
   const label = mode === 'decimal' ? 'Decimal scoring (10.9/shot)' : 'Whole scoring (10.0/shot)';
   return '<div class="score-panel"><div class="eyebrow" style="margin-bottom:8px">' + label + '</div>' +
     '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:8px">Max for ' + state.chartMatchType + ' shots: <span class="mono-sm" style="color:var(--paper)">' + max.toFixed(1) + '</span> (' + perShot + ' pts/shot)</div>' +
-    (data.length === 0 ? '<div style="text-align:center;padding:20px 0;color:var(--paper-dim);font-size:11.5px;border:1px dashed var(--line);border-radius:6px">No sessions logged yet.' + (allowLogging ? '<br/>Add your first score below.' : '') + '</div>' :
+    (data.length === 0 ? '<div style="text-align:center;padding:20px 0;color:var(--paper-dim);font-size:11.5px;border:1px dashed var(--line);border-radius:6px">No sessions logged yet.</div>' :
     lineChartSvg(data, max, yFloor) +
     (analysis ? '<div class="analysis-grid"><div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:var(--paper)">' + fmt(analysis.avg) + '</div><div class="eyebrow" style="font-size:9px">Average</div></div>' +
       '<div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:var(--paper)">' + fmt(analysis.best) + '</div><div class="eyebrow" style="font-size:9px">Best</div></div>' +
       '<div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:' + analysis.trendColor + '">' + analysis.trend + '</div><div class="eyebrow" style="font-size:9px">Trend</div></div>' +
       '<div class="analysis-cell"><div class="mono-sm" style="font-size:11.5px;color:var(--paper)">' + analysis.consistency + '</div><div class="eyebrow" style="font-size:9px">Consistency</div></div></div>'
-      : '<div style="font-size:10.5px;color:var(--paper-dim);margin:6px 0">Log at least 2 sessions to see your performance analysis.</div>')) +
-    (allowLogging ? '<div style="margin-top:12px;border-top:2px dashed var(--line-strong);padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Log a session score</div>' +
-      '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:6px">Enter your ' + state.chartMatchType + '-shot score out of ' + max.toFixed(1) + '</div>' +
-      '<input id="sessionScoreInput_' + mode + '" class="text-input" type="number" step="0.1" min="0" max="' + max + '" placeholder="e.g. ' + (max * 0.75).toFixed(1) + '" style="margin-bottom:8px"/>' +
-      '<button class="btn-brass" onclick="logSessionScore(\'' + mode + '\')">Add session</button></div>' : '') + '</div>';
+      : '<div style="font-size:10.5px;color:var(--paper-dim);margin:6px 0">Log at least 2 sessions to see your performance analysis.</div>')) + '</div>';
+}
+// One unified entry step for both scoring systems at once, instead of two
+// separate forms — a single string of shots naturally has both a whole
+// score and (if you count inner-tens) a decimal score, so logging them
+// together matches how a session actually works instead of treating them
+// as two different sessions.
+function sessionLogForm(studentId) {
+  const shots = Number(state.chartMatchType);
+  const maxInt = MAX_INTEGER[shots], maxDec = MAX_DECIMAL[shots];
+  return '<div class="card span-2"><div class="eyebrow" style="margin-bottom:4px">Log a session</div>' +
+    '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:10px">For the ' + shots + '-shot distance selected above.</div>' +
+    '<label class="field-label" style="margin-top:0">Session or competition name — optional</label>' +
+    '<input id="sessionName" class="text-input" placeholder="e.g. Academy Monthly Match #8"/>' +
+    '<label class="field-label">Whole score (out of ' + maxInt + ')</label>' +
+    '<input id="sessionIntScore" class="text-input" type="number" min="0" max="' + maxInt + '" placeholder="e.g. ' + Math.round(maxInt * 0.85) + '"/>' +
+    '<label class="field-label">Decimal score (out of ' + maxDec.toFixed(1) + ') — optional</label>' +
+    '<input id="sessionDecScore" class="text-input" type="number" step="0.1" min="0" max="' + maxDec + '" placeholder="e.g. ' + (maxDec * 0.85).toFixed(1) + '"/>' +
+    '<button class="btn-brass" style="margin-top:10px" onclick="logUnifiedSession(\'' + studentId + '\')">Log session</button>' +
+    '</div>';
 }
 function matchScoreSection(studentId, allowLogging) {
-  return '<div class="toolbar" style="margin-bottom:12px">' +
-    MATCH_TYPES.map((t) => '<button class="chip ' + (state.chartMatchType === t ? 'chip-active' : '') + '" onclick="setChartMatchType(\'' + t + '\')">' + t + ' shots</button>').join('') + '</div>' +
-    '<div class="score-views">' + scorePanel(studentId, 'integer', allowLogging) + scorePanel(studentId, 'decimal', allowLogging) + '</div>';
+  return '<div class="toolbar" style="margin-bottom:12px;justify-content:space-between;align-items:center">' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">' + MATCH_TYPES.map((t) => '<button class="chip ' + (state.chartMatchType === t ? 'chip-active' : '') + '" onclick="setChartMatchType(\'' + t + '\')">' + t + ' shots</button>').join('') + '</div>' +
+    '<button class="chip" onclick="openAllSessions(\'' + studentId + '\')">' + icon('target', 11) + ' All sessions</button>' +
+    '</div>' +
+    '<div class="score-views">' + scorePanel(studentId, 'integer') + scorePanel(studentId, 'decimal') + '</div>' +
+    (allowLogging ? sessionLogForm(studentId) : '');
 }
 function setChartMatchType(t) { state.chartMatchType = t; render(); }
-async function logSessionScore(mode) {
-  const input = document.getElementById('sessionScoreInput_' + mode);
-  const val = parseFloat(input.value);
+async function logUnifiedSession(studentId) {
   const shots = Number(state.chartMatchType);
-  const max = mode === 'decimal' ? MAX_DECIMAL[shots] : MAX_INTEGER[shots];
-  if (isNaN(val) || val < 0 || val > max) { showToast('Please enter a score between 0 and ' + max.toFixed(1) + '.'); return; }
-  const scoreVal = mode === 'decimal' ? Math.round(val * 10) / 10 : Math.round(val);
-  const existing = scoresFor(state.me.id, shots, mode);
-  await sb.from('match_scores').insert({ student_id: state.me.id, shots, mode, session_label: 'M' + (existing.length + 1), score: scoreVal });
-  await loadScoresFor(state.me.id);
+  const maxInt = MAX_INTEGER[shots], maxDec = MAX_DECIMAL[shots];
+  const nameInput = document.getElementById('sessionName');
+  const intInput = document.getElementById('sessionIntScore');
+  const decInput = document.getElementById('sessionDecScore');
+  const sessionName = nameInput.value.trim() || null;
+  const intVal = parseFloat(intInput.value);
+  const decRaw = decInput.value.trim();
+  const decVal = decRaw === '' ? null : parseFloat(decRaw);
+
+  if (isNaN(intVal) || intVal < 0 || intVal > maxInt) { showToast('Please enter a whole score between 0 and ' + maxInt + '.'); return; }
+  if (decRaw !== '' && (isNaN(decVal) || decVal < 0 || decVal > maxDec)) { showToast('Please enter a decimal score between 0 and ' + maxDec.toFixed(1) + ', or leave it blank.'); return; }
+
+  const existingInt = scoresFor(studentId, shots, 'integer');
+  const label = 'M' + (existingInt.length + 1);
+  const rows = [{ student_id: studentId, shots, mode: 'integer', session_label: label, session_name: sessionName, score: Math.round(intVal) }];
+  if (decVal !== null) rows.push({ student_id: studentId, shots, mode: 'decimal', session_label: label, session_name: sessionName, score: Math.round(decVal * 10) / 10 });
+
+  const { error } = await sb.from('match_scores').insert(rows);
+  if (error) { showToast('Could not log session: ' + error.message); return; }
+  nameInput.value = ''; intInput.value = ''; decInput.value = '';
+  await loadScoresFor(studentId);
   render();
+  showToast('Session logged.', 'success');
 }
 
 // Calendar
@@ -1518,6 +1614,7 @@ async function confirmPayment(studentId) {
     if (student) await generateInvoice(student, method);
     await fetchStudents();
     render();
+    showToast((method + ' payment confirmed — invoice generated' + (student ? ' for ' + student.name : '') + '. They\'ll see it in their dashboard.'), 'success');
   });
 }
 function findInvoice(id) { return (state.cache.myInvoices || []).concat(state.cache.invoices || []).find((i) => i.id === id); }
@@ -1616,46 +1713,77 @@ async function downloadProgressReportPDF() {
   const student = state.me;
   if (!window.jspdf) { showToast('PDF library is still loading — please try again in a moment.'); return; }
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'pt', format: 'a5' });
-  const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
-  const brass = [29, 111, 224], ink = [18, 35, 63], dim = [100, 120, 144], line = [211, 227, 245], forest = [46, 139, 87];
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const brass = [29, 111, 224], ink = [18, 35, 63], dim = [100, 120, 144], line = [211, 227, 245], forest = [46, 139, 87], warn = [184, 134, 11];
+  const marginX = 40;
+  let y = 0;
 
-  doc.setFillColor(234, 242, 252); doc.rect(0, 0, pageW, pageH, 'F');
-  doc.setDrawColor(brass[0], brass[1], brass[2]); doc.setLineWidth(1.2); doc.rect(18, 18, pageW - 36, pageH - 36);
+  const sectionHeader = (title) => {
+    y += 8;
+    doc.setFillColor(brass[0], brass[1], brass[2]); doc.rect(marginX, y, 3, 12, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(ink[0], ink[1], ink[2]);
+    doc.text(title.toUpperCase(), marginX + 9, y + 10);
+    y += 22;
+  };
+  const kvRow = (k, v, valueColor) => {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(dim[0], dim[1], dim[2]);
+    doc.text(k, marginX, y);
+    const c = valueColor || ink;
+    doc.setTextColor(c[0], c[1], c[2]); doc.setFont('helvetica', 'bold');
+    doc.text(String(v), pageW - marginX, y, { align: 'right' });
+    y += 15;
+  };
 
-  doc.setTextColor(brass[0], brass[1], brass[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
-  doc.text('RANGE LEDGER', pageW / 2, 46, { align: 'center' });
-  doc.setTextColor(dim[0], dim[1], dim[2]); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-  doc.text('Shooter Progress Report', pageW / 2, 60, { align: 'center' });
-  let y = 76;
-  doc.setDrawColor(line[0], line[1], line[2]); doc.setLineWidth(0.7); doc.line(30, y, pageW - 30, y);
-  y += 24;
+  // Header
+  doc.setFillColor(234, 242, 252); doc.rect(0, 0, pageW, 842, 'F');
+  doc.setFillColor(ink[0], ink[1], ink[2]); doc.rect(0, 0, pageW, 74, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+  doc.text('RANGE LEDGER', pageW / 2, 30, { align: 'center' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(180, 200, 230);
+  doc.text('P R E C I S I O N   S H O O T I N G   A C A D E M Y   M A N A G E M E N T   S Y S T E M', pageW / 2, 43, { align: 'center' });
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(255, 255, 255);
+  doc.text('SHOOTER PROGRESS REPORT', pageW / 2, 62, { align: 'center' });
+  y = 92;
+  const reportId = 'PR-' + new Date().getFullYear() + '-' + String(student.id).replace(/[^0-9]/g, '').slice(0, 4).padStart(4, '0');
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(dim[0], dim[1], dim[2]);
+  doc.text('Report ID: ' + reportId, marginX, y);
+  doc.text('Report Generated: ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), pageW - marginX, y, { align: 'right' });
+  y += 20;
 
-  doc.setTextColor(ink[0], ink[1], ink[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-  doc.text(student.name, 30, y);
-  y += 16;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(dim[0], dim[1], dim[2]);
-  const infoLine = [student.category, student.shooter_category ? student.shooter_category + ' shooter' : null, student.nrai_shooter_id ? 'ID: ' + student.nrai_shooter_id : null].filter(Boolean).join('  ·  ');
-  doc.text(infoLine, 30, y);
-  y += 10;
-  doc.text('Report generated ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), 30, y);
-  y += 24;
+  // Shooter profile
+  sectionHeader('Shooter Profile');
+  kvRow('Shooter Name', student.name);
+  kvRow('Shooter ID', student.nrai_shooter_id || '—');
+  kvRow('Discipline', student.category + (student.shooter_category ? ' ' + student.shooter_category : ''));
 
+  // Coach & range details
+  sectionHeader('Assigned Coach & Range Details');
+  const coachName = (state.cache.myCoach && state.cache.myCoach.name) || student.coach_name || 'Not yet assigned';
+  const standards = getQualificationStatus(student.id, student.category);
+  const highestMet = standards.filter((s) => s.achieved).sort((a, b) => b.cutoff_score - a.cutoff_score)[0];
+  kvRow('Head Coach', coachName);
+  kvRow('Category', student.shooter_category ? student.shooter_category + ' shooter' : student.category);
+  kvRow('Rank Tier', highestMet ? highestMet.tier + ' Qualification Level' : 'Not yet qualified');
+
+  // Attendance summary — three stat boxes
+  sectionHeader('Attendance Summary');
   const log = (state.cache.myAttendance || []).filter((r) => r.status !== 'PENDING').sort((a, b) => b.id - a.id);
   const streak = computeAttendanceStreak(log);
   const totalSessions = (state.scoresByStudent[student.id] || []).length;
+  const boxW = (pageW - marginX * 2 - 20) / 3;
+  [[student.attendance + '%', 'OVERALL RATE'], [streak + ' session' + (streak === 1 ? '' : 's'), 'CURRENT STREAK'], [String(totalSessions), 'SESSIONS LOGGED']].forEach((box, i) => {
+    const bx = marginX + i * (boxW + 10);
+    doc.setFillColor(255, 255, 255); doc.setDrawColor(line[0], line[1], line[2]); doc.roundedRect(bx, y, boxW, 46, 4, 4, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(brass[0], brass[1], brass[2]);
+    doc.text(box[0], bx + boxW / 2, y + 22, { align: 'center' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(dim[0], dim[1], dim[2]);
+    doc.text(box[1], bx + boxW / 2, y + 36, { align: 'center' });
+  });
+  y += 62;
 
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(ink[0], ink[1], ink[2]);
-  doc.text('Attendance', 30, y); y += 16;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(dim[0], dim[1], dim[2]);
-  doc.text('Overall rate', 30, y); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text(student.attendance + '%', pageW - 30, y, { align: 'right' }); y += 15;
-  doc.setTextColor(dim[0], dim[1], dim[2]); doc.text('Current streak', 30, y); doc.setTextColor(forest[0], forest[1], forest[2]); doc.text(streak + ' session' + (streak === 1 ? '' : 's'), pageW - 30, y, { align: 'right' }); y += 15;
-  doc.setTextColor(dim[0], dim[1], dim[2]); doc.text('Sessions logged', 30, y); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text(String(totalSessions), pageW - 30, y, { align: 'right' }); y += 24;
-
-  doc.setDrawColor(line[0], line[1], line[2]); doc.line(30, y, pageW - 30, y); y += 20;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(ink[0], ink[1], ink[2]);
-  doc.text('Match performance (whole scoring)', 30, y); y += 16;
-  doc.setFontSize(9.5);
+  // Match performance (whole scoring), per shot count
+  sectionHeader('Match Performance (Whole Scoring)');
   let anyScores = false;
   MATCH_TYPES.forEach((shots) => {
     const data = scoresFor(student.id, shots, 'integer');
@@ -1664,21 +1792,55 @@ async function downloadProgressReportPDF() {
     const scores = data.map((d) => d.score);
     const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
     const best = Math.max(...scores);
-    doc.setTextColor(dim[0], dim[1], dim[2]); doc.text(shots + '-shot (' + data.length + ' sessions)', 30, y);
-    doc.setTextColor(ink[0], ink[1], ink[2]); doc.text('avg ' + avg + ' · best ' + best, pageW - 30, y, { align: 'right' });
-    y += 15;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(ink[0], ink[1], ink[2]);
+    doc.text(shots + '-Shot Format (' + data.length + ' session' + (data.length === 1 ? '' : 's') + ' logged)', marginX, y); y += 13;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(dim[0], dim[1], dim[2]);
+    doc.text('Avg: ' + avg + '  |  Best: ' + best, marginX, y); y += 16;
   });
-  if (!anyScores) { doc.setTextColor(dim[0], dim[1], dim[2]); doc.text('No sessions logged yet.', 30, y); y += 15; }
-  y += 10;
+  if (!anyScores) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(dim[0], dim[1], dim[2]); doc.text('No sessions logged yet.', marginX, y); y += 15; }
 
-  doc.setDrawColor(line[0], line[1], line[2]); doc.line(30, y, pageW - 30, y); y += 20;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(ink[0], ink[1], ink[2]);
-  doc.text('Fee status', 30, y);
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(student.fee_status === 'PAID' ? forest[0] : brass[0], student.fee_status === 'PAID' ? forest[1] : brass[1], student.fee_status === 'PAID' ? forest[2] : brass[2]);
-  doc.text(student.fee_status.replace('_', ' '), pageW - 30, y, { align: 'right' });
+  // Recent match & session analytics — full table
+  sectionHeader('Recent Match & Session Analytics');
+  const sessions = getAllSessions(student.id).slice(0, 10);
+  if (sessions.length === 0) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(dim[0], dim[1], dim[2]);
+    doc.text('No sessions logged yet.', marginX, y); y += 16;
+  } else {
+    const cols = [marginX, marginX + 65, marginX + 275, marginX + 320, marginX + 375];
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(dim[0], dim[1], dim[2]);
+    ['DATE', 'SESSION / COMPETITION', 'SHOTS', 'SCORE', 'STATUS'].forEach((h, i) => doc.text(h, cols[i], y));
+    y += 6; doc.setDrawColor(line[0], line[1], line[2]); doc.line(marginX, y, pageW - marginX, y); y += 12;
+    sessions.forEach((s) => {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(ink[0], ink[1], ink[2]);
+      doc.text(new Date(s.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), cols[0], y);
+      doc.text(String(s.session_name || 'Practice session').slice(0, 34), cols[1], y);
+      doc.text(String(s.shots), cols[2], y);
+      doc.text(s.mode === 'decimal' ? Number(s.score).toFixed(1) : String(Math.round(s.score)), cols[3], y);
+      doc.setTextColor(s.isBest ? forest[0] : dim[0], s.isBest ? forest[1] : dim[1], s.isBest ? forest[2] : dim[2]);
+      doc.setFont('helvetica', s.isBest ? 'bold' : 'normal');
+      doc.text(s.isBest ? 'Personal Best' : 'Completed', cols[4], y);
+      y += 14;
+    });
+  }
+  y += 8;
 
-  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(dim[0], dim[1], dim[2]);
-  doc.text('Generated by Range Ledger — Precision Shooting Academy', pageW / 2, pageH - 22, { align: 'center' });
+  // Fee status
+  sectionHeader('Fee Status');
+  const feeColor = student.fee_status === 'PAID' ? forest : (student.fee_status === 'OVERDUE' ? [192, 57, 57] : warn);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(feeColor[0], feeColor[1], feeColor[2]);
+  doc.text(student.fee_status.replace(/_/g, ' '), marginX, y); y += 20;
+
+  // Coach evaluation, if the coach has written one
+  if (student.coach_evaluation) {
+    sectionHeader('Coach Evaluation');
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(ink[0], ink[1], ink[2]);
+    const lines = doc.splitTextToSize(student.coach_evaluation, pageW - marginX * 2);
+    doc.text(lines, marginX, y);
+    y += lines.length * 12 + 8;
+  }
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(dim[0], dim[1], dim[2]);
+  doc.text('Generated by Range Ledger — Precision Shooting Academy Management System  •  Official Electronic Record', pageW / 2, 812, { align: 'center' });
 
   doc.save(student.name.replace(/\s+/g, '-') + '-progress-report.pdf');
 }
@@ -2159,7 +2321,7 @@ function screenStudentDashboard() {
   const log = (state.cache.myAttendance || []).filter((r) => r.status !== 'PENDING').sort((a, b) => b.id - a.id);
   const myInvoices = state.cache.myInvoices || [];
   return '<div class="app-topbar"><div style="display:flex;align-items:center;gap:8px">' + avatar(student, 36) +
-    '<div><div style="font-weight:600;font-size:13px">' + escapeAttr(student.name) + '</div><div style="font-size:10px;color:var(--paper-dim)">' + student.category + '</div></div>' + syncStatusBadge() + '</div>' +
+    '<div><div style="font-weight:600;font-size:13px">' + escapeAttr(student.name) + '</div><div style="font-size:10px;color:var(--paper-dim)">' + student.category + ((state.cache.myCoach && state.cache.myCoach.name) || student.coach_name ? ' · Coach: ' + escapeAttr((state.cache.myCoach && state.cache.myCoach.name) || student.coach_name) : '') + '</div></div>' + syncStatusBadge() + '</div>' +
     '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + calendarPopover(student.shooter_category) + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
     '<div class="screen-pad">' + loadErrorBanner() + studentStatsStrip(student, log) + '<div class="dashboard-grid">' +
     '<div class="card span-2" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
@@ -2177,7 +2339,7 @@ function screenStudentDashboard() {
     (pending.length ? '<div style="font-size:11px;color:var(--brass);margin-top:8px;text-align:center">⏳ Pending your coach\'s approval</div>' : '') +
     (myOfflineAttendanceActions().length ? '<div style="font-size:11px;color:var(--warning);margin-top:8px;text-align:center">' + icon('clock', 10, 'var(--warning)') + ' Saved offline — will sync automatically</div>' : '') +
     '<div class="logbook" style="margin-top:10px">' + (log.slice(0, 4).map((a) => '<div class="log-row"><span class="mono-sm">' + a.requested_date + '</span><span style="font-size:12px;flex:1">Attendance</span>' + attStamp(a.status) + '</div>').join('') || '<div style="font-size:12px;color:var(--paper-dim)">No attendance marked yet.</div>') + '</div></div>' +
-    '<div class="card span-2"><div class="eyebrow" style="margin-bottom:10px">Match performance</div>' + matchScoreSection(student.id, false) + '</div>' +
+    '<div class="card span-2"><div class="eyebrow" style="margin-bottom:10px">Match performance</div>' + matchScoreSection(student.id, true) + '</div>' +
     qualificationStatusCard(student.id, student.category, false, null) +
     studentInventorySection(state.cache.myCoach) + notificationsInboxCard() + nraiNewsSection() + '</div></div>' +
     (state.paymentOpen ? paymentModal(student) : '') + (state.feeReminderOpen ? feeReminderModal(student) : '') + (state.invoiceOpenId ? invoiceModal(state.invoiceOpenId) : '');
@@ -2308,7 +2470,12 @@ function studentDetailModal() {
       '</div>' : '') +
     (invs.length ? '<div style="margin-bottom:12px;border-top:2px dashed var(--line-strong);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + invs.length + ')</div>' +
       '<div style="max-height:120px;overflow-y:auto">' + invs.map((i) => '<div class="log-row" style="padding:5px 0"><span style="cursor:pointer;font-size:11px;flex:1" onclick="viewInvoice(' + i.id + ')">' + i.invoice_number + '</span><span class="mono-sm" style="color:var(--paper-dim)">' + new Date(i.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</span></div>').join('') + '</div></div>' : '') +
-    ringGauge(s.attendance, 60) + '<div style="margin-top:14px">' + matchScoreSection(s.id, true) + '</div>' + qualificationStatusCard(s.id, s.category, true, s) + '</div></div>' +
+    ringGauge(s.attendance, 60) + '<div style="margin-top:14px">' + matchScoreSection(s.id, true) + '</div>' + qualificationStatusCard(s.id, s.category, true, s) +
+    '<div class="card span-2"><div class="eyebrow" style="margin-bottom:8px">Coach evaluation</div>' +
+    '<div style="font-size:10px;color:var(--paper-dim);margin-bottom:8px">Shown on this shooter\'s progress report when saved.</div>' +
+    '<textarea id="coachEvalInput_' + s.id + '" class="text-input" rows="3" placeholder="e.g. Strong stability during hold time and consistent trigger follow-through.">' + escapeAttr(s.coach_evaluation || '') + '</textarea>' +
+    '<button class="chip" style="margin-top:8px" onclick="saveCoachEvaluation(\'' + s.id + '\')">Save evaluation</button>' +
+    '</div></div></div>' +
     (state.invoiceOpenId ? invoiceModal(state.invoiceOpenId) : '');
 }
 
@@ -2396,7 +2563,7 @@ function App() {
     case 'ADMIN_DASHBOARD': screenHtml = screenAdminDashboard(); break;
     default: screenHtml = screenAuth();
   }
-  return toastBanner() + confirmDialogModal() + privacyNoticeModal() + screenHtml;
+  return toastBanner() + confirmDialogModal() + privacyNoticeModal() + allSessionsModal() + screenHtml;
 }
 
 if ('serviceWorker' in navigator) {
