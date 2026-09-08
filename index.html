@@ -3,43 +3,46 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<!--
+  Security note: script-src includes 'unsafe-inline' because this app's
+  entire interaction model uses inline onclick/onchange/oninput attributes
+  on dynamically generated HTML — removing that would break every button
+  in the app without a fundamental rewrite to addEventListener-based
+  delegation. What this CSP DOES meaningfully restrict: only the three
+  CDN domains this app actually loads scripts from are trusted (blocking
+  a malicious script tag from loading code off some other domain), and
+  connect-src limits network requests to Supabase — so even if a stored
+  XSS payload somehow ran, it couldn't easily exfiltrate data to an
+  arbitrary attacker-controlled server.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co;" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
 <title>Range Ledger — Shooting Academy</title>
 <meta name="description" content="Manage your shooting academy — fees, invoices, attendance approval, match calendar, and performance tracking for students, coaches, and admins." />
-<meta name="theme-color" content="#EAF2FB" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231D6FE0' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cline x1='12' y1='1' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='1' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='23' y2='12'/%3E%3C/svg%3E" />
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23EAF2FB' stroke='%231D6FE0' stroke-width='1.6' stroke-linecap='round'%3E%3Crect width='24' height='24' rx='5' fill='%23EAF2FB'/%3E%3Ccircle cx='12' cy='12' r='7.5'/%3E%3Cline x1='12' y1='3' x2='12' y2='6'/%3E%3Cline x1='12' y1='18' x2='12' y2='21'/%3E%3Cline x1='3' y1='12' x2='6' y2='12'/%3E%3Cline x1='18' y1='12' x2='21' y2='12'/%3E%3C/svg%3E" />
+<meta name="theme-color" content="#F6F7F9" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232F5FE0' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cline x1='12' y1='1' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='1' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='23' y2='12'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23F6F7F9' stroke='%232F5FE0' stroke-width='1.6' stroke-linecap='round'%3E%3Crect width='24' height='24' rx='5' fill='%23F6F7F9'/%3E%3Ccircle cx='12' cy='12' r='7.5'/%3E%3Cline x1='12' y1='3' x2='12' y2='6'/%3E%3Cline x1='12' y1='18' x2='12' y2='21'/%3E%3Cline x1='3' y1='12' x2='6' y2='12'/%3E%3Cline x1='18' y1='12' x2='21' y2='12'/%3E%3C/svg%3E" />
 <link rel="manifest" href="manifest.json" />
 <meta property="og:title" content="Range Ledger — Shooting Academy" />
 <meta property="og:description" content="Fees, invoices, attendance, match calendar, and performance tracking for a precision shooting academy." />
 <meta property="og:type" content="website" />
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
   :root {
-    --bg: #EAF2FB; --ink: #FFFFFF; --paper: #12233F; --paper-dim: #64789A;
-    --brass: #1D6FE0; --warning: #D9A62E; --olive: #3D6EA8; --forest: #2E8B57; --rust: #C0392B;
-    --line: #D3E3F5; --line-soft: #E4EEFA; --line-strong: #7FA8D9;
+    --bg: #F6F7F9; --ink: #FFFFFF; --paper: #1B1D22; --paper-dim: #6B7280;
+    --brass: #2F5FE0; --warning: #B7791F; --olive: #64748B; --forest: #1E9A5C; --rust: #DC2A3B;
+    --line: #E7E9ED; --line-soft: #F1F2F5; --line-strong: #D7DAE0;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); font-family: 'IBM Plex Sans', sans-serif; color: var(--paper); position: relative; }
+  body { margin: 0; background: var(--bg); font-family: 'IBM Plex Sans', sans-serif; color: var(--paper); position: relative; -webkit-font-smoothing: antialiased; }
 
-  .bg-target {
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background:
-      radial-gradient(circle at 18% 22%, rgba(15,35,70,0.28) 0 3px, transparent 3px 4.5px),
-      radial-gradient(circle at 83% 16%, rgba(15,35,70,0.24) 0 2.5px, transparent 2.5px 4px),
-      radial-gradient(circle at 72% 82%, rgba(15,35,70,0.26) 0 3px, transparent 3px 4.5px),
-      radial-gradient(circle at 10% 78%, rgba(15,35,70,0.22) 0 2.5px, transparent 2.5px 4px),
-      radial-gradient(circle at 90% 58%, rgba(15,35,70,0.24) 0 2.5px, transparent 2.5px 4px),
-      radial-gradient(circle at 50% 34%, rgba(29,111,224,0.55) 0 7px, transparent 7px 8px),
-      repeating-radial-gradient(circle at 50% 34%, rgba(29,111,224,0.20) 0px, rgba(29,111,224,0.20) 3px, transparent 3px, transparent 42px),
-      repeating-radial-gradient(circle at 50% 34%, rgba(15,35,70,0.06) 0px, rgba(15,35,70,0.06) 1px, transparent 1px, transparent 42px);
-  }
+  .bg-target { display: none; }
   .phone { position: relative; z-index: 1; }
 
-  .config-banner { background: #B5432B; color: #fff; font-size: 12px; padding: 10px 16px; text-align: center; font-family: 'IBM Plex Mono', monospace; position: relative; z-index: 2; }
-  .load-error-banner { background: rgba(29,111,224,0.12); border: 1px solid var(--rust); color: var(--rust); border-radius: 6px; padding: 10px 12px; font-size: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-  .load-error-banner button { font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.04em; background: none; border: 1px solid var(--rust); color: var(--rust); border-radius: 5px; padding: 4px 8px; cursor: pointer; }
+  .config-banner { background: #9C2B2B; color: #fff; font-size: 12px; padding: 10px 16px; text-align: center; position: relative; z-index: 2; }
+  .load-error-banner { background: rgba(220,42,59,0.06); border: 1px solid rgba(220,42,59,0.3); color: var(--rust); border-radius: 8px; padding: 10px 12px; font-size: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .load-error-banner button { font-size: 11px; font-weight: 600; background: none; border: 1px solid var(--rust); color: var(--rust); border-radius: 6px; padding: 4px 9px; cursor: pointer; }
   .config-banner code { background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 3px; }
 
   .phone {
@@ -48,126 +51,122 @@
   }
   .status-bar { display: flex; justify-content: space-between; padding: 8px 18px 0; font-size: 11px; color: var(--paper-dim); font-family: 'IBM Plex Mono', monospace; }
 
-  .eyebrow { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; font-weight: 600; color: var(--paper-dim); }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.01em; color: var(--paper-dim); }
   /* Real section/card headings — the eyebrow that opens a card — get a
      distinct, more designed treatment instead of sharing the same flat
      style as every tiny inline label (stat captions, timestamps, etc). */
   .card > .eyebrow:first-child, .app-topbar .eyebrow, .section-head .eyebrow {
-    font-size: 13px; font-weight: 700; color: var(--brass); letter-spacing: 0.04em;
+    font-size: 13px; font-weight: 700; color: var(--paper); letter-spacing: 0;
   }
-  .section-head { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--line-strong); }
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
 
   .app-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
   .screen-pad { padding: 16px; }
   .splash { padding: 50px 20px 20px; position: relative; overflow: hidden; }
-  .brand-icon-ring { position: relative; display: inline-flex; }
-  .brand-icon-ring::before {
-    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 130px; height: 130px; border-radius: 50%; pointer-events: none;
-    background:
-      radial-gradient(circle, rgba(29,111,224,0.6) 0 5px, transparent 5px 6px),
-      repeating-radial-gradient(circle, rgba(29,111,224,0.22) 0px, rgba(29,111,224,0.22) 2px, transparent 2px, transparent 14px);
-  }
+  .brand-icon-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 18px; background: rgba(47,95,224,0.08); }
+  .brand-icon-ring::before { content: none; }
   .brand-center { text-align: center; }
   .pulse-loading { animation: pulseFade 1.4s ease-in-out infinite; }
-  @keyframes pulseFade { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-  .brand-title { font-family: 'Oswald', sans-serif; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--brass); }
+  @keyframes pulseFade { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .brand-title { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; letter-spacing: -0.01em; color: var(--paper); }
   .brand-sub { font-size: 12px; color: var(--paper-dim); margin-top: 2px; }
 
-  .auth-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .auth-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--line-soft); border-radius: 10px; padding: 3px; }
 
-  .role-card { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 10px; color: var(--paper); cursor: pointer; text-align: left; }
+  .role-card { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 10px; color: var(--paper); cursor: pointer; text-align: left; }
   .role-card:hover { border-color: var(--brass); }
 
-  .field-label { display: block; font-size: 11px; font-weight: 700; color: var(--brass); margin: 10px 0 4px; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; }
-  .text-input { width: 100%; background: var(--ink); border: 1px solid var(--line); color: var(--paper); border-radius: 6px; padding: 9px 10px; font-size: 13px; font-family: 'IBM Plex Sans', sans-serif; }
+  .field-label { display: block; font-size: 12px; font-weight: 600; color: var(--paper-dim); margin: 12px 0 5px; }
+  .text-input { width: 100%; background: var(--ink); border: 1px solid var(--line); color: var(--paper); border-radius: 8px; padding: 10px 11px; font-size: 13.5px; font-family: 'IBM Plex Sans', sans-serif; }
   select.text-input { appearance: none; }
 
-  .btn-brass { background: var(--brass); color: var(--ink); border: none; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11.5px; font-weight: 600; padding: 10px 14px; border-radius: 5px; cursor: pointer; width: 100%; }
-  .btn-brass:hover { filter: brightness(1.08); }
-  .btn-brass:disabled { opacity: 0.6; cursor: default; }
+  .btn-brass { background: var(--brass); color: var(--ink); border: none; font-size: 13px; font-weight: 600; padding: 11px 16px; border-radius: 8px; cursor: pointer; width: 100%; }
+  .btn-brass:hover { filter: brightness(1.06); }
+  .btn-brass:disabled { opacity: 0.55; cursor: default; }
 
-  .icon-btn { background: var(--ink); border: 1px solid var(--line); border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--paper-dim); cursor: pointer; position: relative; }
+  .icon-btn { background: var(--ink); border: 1px solid var(--line); border-radius: 9px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--paper-dim); cursor: pointer; position: relative; }
   .icon-btn.small { width: 26px; height: 26px; }
   .dot-badge { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; border-radius: 50%; background: var(--brass); border: 1.5px solid var(--bg); }
 
-  .popover { position: absolute; top: 42px; right: 0; width: 250px; background: var(--ink); border: 1px solid var(--brass); border-radius: 8px; padding: 12px; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .popover { position: absolute; top: 42px; right: 0; width: 250px; background: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 12px; z-index: 20; box-shadow: 0 12px 32px rgba(20,22,30,0.14); }
   .popover.cal-popover { width: 292px; }
   .popover-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .reminder-list { display: flex; flex-direction: column; gap: 2px; max-height: 150px; overflow: auto; }
-  .reminder-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 2px dashed var(--line-strong); }
+  .reminder-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
   .reminder-row:last-child { border-bottom: none; }
 
   .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 9.5px; color: var(--paper-dim); margin-bottom: 4px; font-family: 'IBM Plex Mono', monospace; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
-  .cal-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; font-size: 10.5px; font-family: 'IBM Plex Mono', monospace; color: var(--paper); }
-  .cal-cell:hover { background: rgba(29,111,224,0.14); }
+  .cal-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 7px; cursor: pointer; font-size: 10.5px; font-family: 'IBM Plex Mono', monospace; color: var(--paper); }
+  .cal-cell:hover { background: var(--line-soft); }
   .cal-cell.empty { cursor: default; visibility: hidden; }
   .cal-cell.today { border: 1px solid var(--brass); }
   .cal-cell.selected { background: var(--brass); color: var(--ink); font-weight: 600; }
   .cal-dots { display: flex; gap: 2px; margin-top: 1px; height: 4px; }
   .cal-dot { width: 4px; height: 4px; border-radius: 50%; }
-  .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 8px 0; padding-top: 8px; border-top: 2px dashed var(--line-strong); }
-  .elig-badge { display: inline-block; font-family: 'Oswald', sans-serif; font-size: 8.5px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600; color: var(--elig-color); border: 1px solid var(--elig-color); border-radius: 3px; padding: 1px 5px; }
-  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--paper-dim); }
+  .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 8px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+  .elig-badge { display: inline-block; font-size: 9.5px; letter-spacing: 0.01em; font-weight: 600; color: var(--elig-color); border: 1px solid var(--elig-color); border-radius: 4px; padding: 1px 6px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--paper-dim); }
   .legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 30; padding: 20px; }
-  .modal-card { background: var(--ink); border: 1px solid var(--brass); border-radius: 10px; padding: 18px; width: 100%; max-width: 300px; max-height: 640px; overflow-y: auto; }
-  .receipt-card { background: repeating-linear-gradient(var(--ink), var(--ink) 27px, var(--line-soft) 27px, var(--line-soft) 28px); }
-  .receipt-row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; padding: 4px 0; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,22,30,0.44); display: flex; align-items: center; justify-content: center; z-index: 30; padding: 20px; }
+  .modal-card { background: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: 100%; max-width: 300px; max-height: 640px; overflow-y: auto; box-shadow: 0 24px 60px rgba(20,22,30,0.22); }
+  .receipt-card { background: var(--ink); }
+  .receipt-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 5px 0; }
   .receipt-row span:first-child { color: var(--paper-dim); }
-  .pay-option { width: 100%; text-align: left; background: var(--bg); border: 1px solid var(--line); color: var(--paper); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .pay-option { width: 100%; text-align: left; background: var(--bg); border: 1px solid var(--line); color: var(--paper); border-radius: 8px; padding: 11px 12px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
   .pay-option:hover { border-color: var(--brass); }
 
-  .card { background: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+  .card { background: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
   .stat-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .statcard { background: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
-  .statcard-icon { width: 30px; height: 30px; border-radius: 6px; background: rgba(29,111,224,0.12); color: var(--brass); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .statcard { background: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .statcard-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(47,95,224,0.08); color: var(--brass); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .statcard-value { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 16px; }
   .fee-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .fee-card { display: flex; align-items: center; gap: 8px; padding: 12px; }
 
   .mono-lg { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 20px; margin-bottom: 4px; }
   .mono-sm { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--brass); }
-  .detail-name { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 17px; }
+  .detail-name { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 17px; }
 
   .toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .chip { font-family: 'Oswald', sans-serif; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--ink); color: var(--paper-dim); cursor: pointer; }
-  .chip-active { border-color: var(--brass); color: var(--brass); }
+  .chip { font-size: 11.5px; letter-spacing: 0; padding: 7px 11px; border-radius: 7px; border: 1px solid var(--line); background: var(--ink); color: var(--paper-dim); cursor: pointer; font-weight: 500; }
+  .chip-active { border-color: var(--brass); color: var(--brass); background: rgba(47,95,224,0.06); }
 
-  .stamp { display: inline-flex; align-items: center; gap: 5px; font-family: 'Oswald', sans-serif; font-size: 10px; letter-spacing: 0.07em; font-weight: 600; color: var(--stamp-color); border: 1.5px solid var(--stamp-color); padding: 3px 8px 3px 6px; border-radius: 3px; transform: rotate(-3deg); position: relative; }
-  .stamp::before { content: ''; position: absolute; inset: -3px; border: 1px solid var(--stamp-color); opacity: 0.35; border-radius: 4px; pointer-events: none; }
+  .stamp { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 600; color: var(--stamp-color); background: color-mix(in srgb, var(--stamp-color) 10%, transparent); padding: 3px 8px; border-radius: 6px; }
+  .stamp::before { content: none; }
 
   .logbook { display: flex; flex-direction: column; }
-  .analysis-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 10px 0; padding: 8px; background: var(--line-soft); border-radius: 6px; }
+  .analysis-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 10px 0; padding: 10px; background: var(--line-soft); border-radius: 8px; }
   .analysis-cell { text-align: center; }
-  .log-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 2px dashed var(--line-strong); }
+  .log-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line-soft); }
   .log-row:last-child { border-bottom: none; }
 
   .ledger { width: 100%; border-collapse: collapse; }
-  .ledger th { text-align: left; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; font-size: 9.5px; color: var(--paper-dim); padding: 10px 12px; border-bottom: 1px solid var(--line); }
-  .ledger td { padding: 10px 12px; border-bottom: 1px solid var(--line-soft); font-size: 12px; }
+  .ledger th { text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: 0.01em; color: var(--paper-dim); padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .ledger td { padding: 10px 12px; border-bottom: 1px solid var(--line-soft); font-size: 12.5px; }
   .ledger tr:last-child td { border-bottom: none; }
   .ledger tbody tr { cursor: pointer; }
-  .ledger tbody tr:hover { background: rgba(29,111,224,0.06); }
+  .ledger tbody tr:hover { background: var(--line-soft); }
 
   .mini-bar { width: 60px; height: 6px; background: var(--line-soft); border-radius: 3px; overflow: hidden; }
   .mini-bar-fill { height: 100%; border-radius: 3px; }
 
-  .back-btn { display: flex; align-items: center; gap: 4px; background: none; border: none; color: var(--paper-dim); font-size: 12px; cursor: pointer; margin-bottom: 10px; padding: 0; }
+  .back-btn { display: flex; align-items: center; gap: 4px; background: none; border: none; color: var(--paper-dim); font-size: 12.5px; cursor: pointer; margin-bottom: 10px; padding: 0; }
   .back-btn:hover { color: var(--brass); }
 
-  .avatar-fallback { border-radius: 50%; background: var(--olive); color: var(--ink); display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-weight: 600; border: 1.5px solid var(--brass); }
+  .avatar-fallback { border-radius: 50%; background: var(--olive); color: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 600; border: 1.5px solid var(--ink); }
 
-  /* Toasts */
-  .toast-stack { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 8px; width: min(340px, calc(100% - 28px)); pointer-events: none; }
-  .toast { pointer-events: auto; background: var(--ink); border: 1px solid var(--line); border-left: 4px solid var(--brass); border-radius: 7px; padding: 10px 12px; font-size: 12.5px; box-shadow: 0 10px 28px rgba(15,35,70,0.22); display: flex; align-items: flex-start; gap: 8px; animation: toast-in 0.25s ease; }
-  .toast.success { border-left-color: var(--forest); }
-  .toast.error { border-left-color: var(--rust); }
-  .toast-close { background: none; border: none; color: var(--paper-dim); cursor: pointer; padding: 0; margin-left: auto; flex-shrink: 0; }
-  @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  /* Toast */
+  .toast-stack { display: none; }
+  .toast {
+    position: fixed; top: 14px; left: 14px; right: 14px; z-index: 60; margin: 0 auto; max-width: 380px;
+    background: var(--paper); border: none; border-radius: 10px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink);
+    box-shadow: 0 16px 40px rgba(20,22,30,0.28); cursor: pointer; animation: toast-in 0.2s ease;
+  }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Loading screen */
   .loading-crosshair { animation: pulse-fade 1.6s ease-in-out infinite; }
@@ -175,65 +174,52 @@
 
   /* Photo upload */
   .photo-upload { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
-  .photo-upload-btn { display: flex; align-items: center; gap: 6px; background: var(--ink); border: 1px dashed var(--line); color: var(--paper-dim); border-radius: 6px; padding: 10px 12px; font-size: 12px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  .photo-upload-btn { display: flex; align-items: center; gap: 6px; background: var(--ink); border: 1px dashed var(--line-strong); color: var(--paper-dim); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
   .photo-upload-btn:hover { border-color: var(--brass); color: var(--brass); }
 
   /* Password visibility toggle */
-  .password-wrap { position: relative; }
-  .password-wrap input { padding-right: 36px; }
-  .password-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--paper-dim); cursor: pointer; padding: 4px; display: flex; }
-  .password-toggle:hover { color: var(--brass); }
-
-  /* General interactivity polish */
-  .btn-brass, .chip, .role-card, .pay-option, .icon-btn, .photo-upload-btn { transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, filter 0.12s ease, background 0.12s ease; }
-  .btn-brass:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29,111,224,0.3); }
-  .btn-brass:active:not(:disabled) { transform: translateY(0); }
-  .role-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(15,35,70,0.08); }
-  .card, .statcard { box-shadow: 0 1px 2px rgba(15,35,70,0.04), 0 2px 8px rgba(15,35,70,0.05); transition: box-shadow 0.15s ease, transform 0.15s ease; }
-  .chip:hover { border-color: var(--brass); color: var(--brass); }
-  .icon-btn:hover { border-color: var(--brass); color: var(--brass); background: rgba(29,111,224,0.08); }
-  .text-input { transition: border-color 0.12s ease, box-shadow 0.12s ease; }
-  .text-input:focus { outline: none; border-color: var(--brass); box-shadow: 0 0 0 3px rgba(29,111,224,0.14); }
-  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .role-card:focus-visible {
-    outline: 2px solid var(--brass); outline-offset: 1px;
-  }
-  .modal-card { animation: modal-in 0.18s ease; }
-  @keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  ::selection { background: rgba(29,111,224,0.25); }
-  .toast {
-    position: fixed; top: 14px; left: 14px; right: 14px; z-index: 60; margin: 0 auto; max-width: 380px;
-    background: var(--ink); border: 1.5px solid var(--toast-color); border-radius: 9px; padding: 11px 12px;
-    display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--paper);
-    box-shadow: 0 8px 24px rgba(15,35,70,0.18); cursor: pointer; animation: toast-in 0.2s ease;
-  }
-  @keyframes toast-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-  .sync-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; padding: 4px 8px; border-radius: 12px; white-space: nowrap; }
-  .sync-offline { background: rgba(194,57,57,0.12); color: var(--rust); }
-  .sync-syncing { background: rgba(29,111,224,0.12); color: var(--brass); animation: pulseFade 1.2s ease-in-out infinite; }
-  .sync-pending { background: rgba(217,166,46,0.16); color: var(--warning); }
-  .queued-tag { font-size: 9px; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.03em; color: var(--warning); font-style: normal; }
   .password-wrap { position: relative; }
   .password-wrap .text-input { padding-right: 38px; }
   .password-toggle-btn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--paper-dim); cursor: pointer; padding: 4px; display: flex; }
   .password-toggle-btn:hover { color: var(--brass); }
 
+  /* General interactivity polish */
+  .btn-brass, .chip, .role-card, .pay-option, .icon-btn, .photo-upload-btn { transition: border-color 0.12s ease, filter 0.12s ease, background 0.12s ease, box-shadow 0.12s ease; }
+  .btn-brass:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(47,95,224,0.22); }
+  .role-card:hover { box-shadow: 0 4px 14px rgba(20,22,30,0.06); }
+  .card, .statcard { box-shadow: 0 1px 2px rgba(20,22,30,0.03); transition: box-shadow 0.15s ease; }
+  .chip:hover { border-color: var(--brass); color: var(--brass); }
+  .icon-btn:hover { border-color: var(--brass); color: var(--brass); background: rgba(47,95,224,0.06); }
+  .text-input { transition: border-color 0.12s ease, box-shadow 0.12s ease; }
+  .text-input:focus { outline: none; border-color: var(--brass); box-shadow: 0 0 0 3px rgba(47,95,224,0.12); }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .role-card:focus-visible {
+    outline: 2px solid var(--brass); outline-offset: 1px;
+  }
+  .modal-card { animation: modal-in 0.18s ease; }
+  @keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  ::selection { background: rgba(47,95,224,0.2); }
+  .sync-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 12px; white-space: nowrap; }
+  .sync-offline { background: rgba(220,42,59,0.08); color: var(--rust); }
+  .sync-syncing { background: rgba(47,95,224,0.08); color: var(--brass); animation: pulseFade 1.2s ease-in-out infinite; }
+  .sync-pending { background: rgba(183,121,31,0.1); color: var(--warning); }
+  .queued-tag { font-size: 9.5px; color: var(--warning); font-style: normal; }
+
   /* Auth card — gives sign in/up its own elevated surface instead of sitting
      directly on the page background, like a real app's login screen. */
-  .auth-card { background: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 24px 22px; margin-top: 22px; box-shadow: 0 1px 2px rgba(15,35,70,0.05), 0 12px 32px rgba(15,35,70,0.10); animation: modal-in 0.22s ease; }
-  .auth-tabs { background: var(--line-soft); border-radius: 9px; padding: 3px; }
-  .auth-tab { flex: 1; text-align: center; padding: 8px; border-radius: 7px; border: none; background: transparent; color: var(--paper-dim); font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.05em; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; }
-  .auth-tab.active { background: var(--ink); color: var(--brass); font-weight: 700; box-shadow: 0 1px 3px rgba(15,35,70,0.12); }
-  .avatar-fallback, .avatar-photo { box-shadow: 0 2px 6px rgba(15,35,70,0.15); }
+  .auth-card { background: var(--ink); border: 1px solid var(--line); border-radius: 16px; padding: 26px 22px; margin-top: 22px; box-shadow: 0 1px 2px rgba(20,22,30,0.03), 0 16px 40px rgba(20,22,30,0.08); animation: modal-in 0.22s ease; }
+  .auth-tab { flex: 1; text-align: center; padding: 8px; border-radius: 8px; border: none; background: transparent; color: var(--paper-dim); font-size: 12.5px; font-weight: 500; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; }
+  .auth-tab.active { background: var(--ink); color: var(--paper); font-weight: 600; box-shadow: 0 1px 3px rgba(20,22,30,0.1); }
+  .avatar-fallback, .avatar-photo { box-shadow: 0 1px 3px rgba(20,22,30,0.1); }
 
   .dashboard-grid { display: flex; flex-direction: column; gap: 12px; }
   .dashboard-grid .span-2 { }
   .score-views { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
   .score-panel { min-width: 0; }
-  .score-views .score-panel:nth-child(2) { border-left: 2px dashed var(--line-strong); padding-left: 10px; }
+  .score-views .score-panel:nth-child(2) { border-left: 1px solid var(--line); padding-left: 10px; }
 
   @media (min-width: 860px) {
-    body { background: #CFE1F7; padding: 40px 24px; }
-    .phone { max-width: 1180px; margin: 0 auto; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 30px 80px rgba(15,35,70,0.20); min-height: 82vh; overflow: hidden; }
+    body { background: #ECEEF2; padding: 40px 24px; }
+    .phone { max-width: 1180px; margin: 0 auto; border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 30px 80px rgba(20,22,30,0.12); min-height: 82vh; overflow: hidden; }
     .app-topbar { padding: 20px 48px; }
     .screen-pad { padding: 30px 48px 48px; }
     .splash { max-width: 480px; margin: 0 auto; padding: 80px 20px 20px; }
@@ -252,30 +238,6 @@
     .score-views { gap: 20px; }
     .score-views .score-panel:nth-child(2) { padding-left: 20px; }
     .analysis-grid { grid-template-columns: repeat(4, 1fr); }
-
-    /* Desktop: large faint target-face illustrations peeking in from the
-       side gutters beside the centered auth card, since there's real empty
-       space there once the page goes wide. Custom-drawn concentric-ring
-       motif matching the app's own crosshair icon — no photos, no
-       trademarked imagery, just an echo of the app's existing visual
-       language, scaled up. */
-    body.auth-decor::before, body.auth-decor::after {
-      content: ''; position: fixed; top: 50%; width: 320px; height: 320px;
-      background-repeat: no-repeat; pointer-events: none; z-index: 0;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='95' fill='none' stroke='%231D6FE0' stroke-width='2' opacity='0.16'/%3E%3Ccircle cx='100' cy='100' r='72' fill='none' stroke='%231D6FE0' stroke-width='2' opacity='0.16'/%3E%3Ccircle cx='100' cy='100' r='49' fill='none' stroke='%231D6FE0' stroke-width='2' opacity='0.16'/%3E%3Ccircle cx='100' cy='100' r='26' fill='none' stroke='%231D6FE0' stroke-width='2' opacity='0.16'/%3E%3Ccircle cx='100' cy='100' r='4' fill='%231D6FE0' opacity='0.22'/%3E%3Cline x1='100' y1='4' x2='100' y2='196' stroke='%231D6FE0' stroke-width='1' opacity='0.1'/%3E%3Cline x1='4' y1='100' x2='196' y2='100' stroke='%231D6FE0' stroke-width='1' opacity='0.1'/%3E%3C/svg%3E");
-    }
-    body.auth-decor::before { left: -60px; transform: translateY(-50%); }
-    body.auth-decor::after { right: -60px; transform: translateY(-50%) scaleX(-1); }
-  }
-  @media (max-width: 859px) {
-    /* Mobile: no side gutters to use, so a thin rangefinder-tick border
-       strip along the top edge instead — same idea (a shooting-range
-       motif), scaled down to fit a narrow screen without competing with
-       the form for space. */
-    body.auth-decor::before {
-      content: ''; position: fixed; top: 0; left: 0; right: 0; height: 5px; z-index: 5; pointer-events: none;
-      background-image: repeating-linear-gradient(90deg, rgba(29,111,224,0.4) 0 2px, transparent 2px 16px);
-    }
   }
 </style>
 </head>
@@ -286,7 +248,6 @@
 <div class="phone"><div id="root"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
@@ -379,6 +340,16 @@ function eligibilityInfo(type, cat) {
   return rules[type] || { ok: 'cond', note: 'Check the NRAI Match Book for this event\'s entry rules' };
 }
 function formatDate(iso) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+// Local (not UTC) calendar day as YYYY-MM-DD — new Date().toISOString() reads
+// the UTC day, which is a day behind local midnight across most of the
+// negative-UTC-offset world and a day ahead for positive offsets during part
+// of the day, so every "what day is it" comparison in this app goes through
+// this instead.
+function localIsoDate(date) {
+  const d = date || new Date();
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
 function daysUntil(iso) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const target = new Date(iso + 'T00:00:00');
@@ -419,6 +390,10 @@ const state = {
   accountForm: null,
   loadError: null,
   toast: null,
+  confirmDialog: null,
+  showPrivacyNotice: false,
+  showAllSessions: false,
+  allSessionsStudentId: null,
   coachDirectory: [],
   broadcastForm: { message: '', templateTitle: '', audienceRole: 'student', audienceCategory: '', audienceFeeStatus: '', targetCoachId: '', channel: 'app' },
   lastBroadcastRecipients: [],
@@ -547,6 +522,29 @@ function setupConnectivityListeners() {
   // anywhere) — this catches anything left queued regardless.
   setInterval(() => { if (state.isOnline && state.syncQueue.length > 0) syncOfflineQueue(); }, 20000);
 }
+// Auto-logout after inactivity — a real security consideration for an app
+// that's often used on a shared range-side device or a coach's shop
+// computer, not just someone's personal phone. Warns 5 minutes before it
+// actually signs out, and any real interaction resets the clock.
+const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
+const INACTIVITY_WARNING_MS = 25 * 60 * 1000;
+let lastActivityAt = Date.now();
+let inactivityWarned = false;
+function resetActivityTimer() { lastActivityAt = Date.now(); inactivityWarned = false; }
+function setupInactivityMonitor() {
+  ['click', 'keydown', 'touchstart', 'mousemove'].forEach((evt) => window.addEventListener(evt, resetActivityTimer, { passive: true }));
+  setInterval(() => {
+    if (!state.session || state.screen === 'AUTH' || state.screen === 'LOADING') return;
+    const elapsed = Date.now() - lastActivityAt;
+    if (elapsed >= INACTIVITY_LIMIT_MS) {
+      logout();
+      showToast('You were signed out after 30 minutes of inactivity.', 'info');
+    } else if (elapsed >= INACTIVITY_WARNING_MS && !inactivityWarned) {
+      inactivityWarned = true;
+      showToast('You\'ll be signed out in 5 minutes due to inactivity — move your mouse or tap anywhere to stay signed in.', 'info');
+    }
+  }, 30000);
+}
 function syncStatusBadge() {
   if (!state.isOnline) {
     return '<span class="sync-badge sync-offline">' + icon('alert', 11) + ' Offline' + (state.syncQueue.length ? ' · ' + state.syncQueue.length + ' queued' : '') + '</span>';
@@ -584,9 +582,58 @@ function toastBanner() {
   const color = t.type === 'success' ? 'var(--forest)' : t.type === 'info' ? 'var(--brass)' : 'var(--rust)';
   const iconName = t.type === 'success' ? 'check' : t.type === 'info' ? 'bell' : 'alert';
   return '<div class="toast" style="--toast-color:' + color + '" onclick="dismissToast()">' +
-    icon(iconName, 15, color) + '<span style="flex:1">' + t.message + '</span>' + icon('x', 12, 'var(--paper-dim)') + '</div>';
+    icon(iconName, 15, color) + '<span style="flex:1">' + escapeAttr(t.message) + '</span>' + icon('x', 12, 'var(--paper-dim)') + '</div>';
+}
+// In-app confirmation for destructive actions — deliberately not the
+// browser's native confirm(), to match the rest of the app's styling and
+// because native dialogs block the whole page in a way that feels jarring.
+function askConfirm(message, actionFnName, args) {
+  state.confirmDialog = { message, action: actionFnName, args: args || [] };
+  render();
+}
+function cancelConfirm() { state.confirmDialog = null; render(); }
+function proceedConfirm() {
+  const c = state.confirmDialog;
+  state.confirmDialog = null;
+  if (c && typeof window[c.action] === 'function') window[c.action].apply(null, c.args);
+  render();
+}
+function confirmDialogModal() {
+  if (!state.confirmDialog) return '';
+  return '<div class="modal-overlay" onclick="if(event.target===this) cancelConfirm()"><div class="modal-card" style="max-width:320px;text-align:center">' +
+    icon('alert', 26, 'var(--rust)') +
+    '<div style="font-size:13px;margin:12px 0 18px">' + escapeAttr(state.confirmDialog.message) + '</div>' +
+    '<div style="display:flex;gap:8px"><button class="chip" style="flex:1;justify-content:center" onclick="cancelConfirm()">Cancel</button>' +
+    '<button class="btn-brass" style="flex:1;background:var(--rust)" onclick="proceedConfirm()">Delete</button></div>' +
+    '</div></div>';
+}
+function togglePrivacyNotice() { state.showPrivacyNotice = !state.showPrivacyNotice; render(); }
+function privacyNoticeModal() {
+  if (!state.showPrivacyNotice) return '';
+  return '<div class="modal-overlay" onclick="if(event.target===this) togglePrivacyNotice()"><div class="modal-card" style="max-width:440px;max-height:78vh;overflow-y:auto;text-align:left">' +
+    '<div class="eyebrow" style="margin-bottom:10px">Privacy &amp; data notice</div>' +
+    '<div style="font-size:11.5px;line-height:1.65;color:var(--paper)">' +
+    '<p style="margin:0 0 10px"><b>What we collect:</b> your name, email, phone number, an optional passport-size photo, your NRAI Shooter ID and NRAI account email, your weapon category, match scores logged by your coach, attendance records, and fee payment history.</p>' +
+    '<p style="margin:0 0 10px"><b>Where it\'s stored:</b> in Supabase, a third-party cloud database and file-storage provider. This app does not run its own separate servers.</p>' +
+    '<p style="margin:0 0 10px"><b>Who can see it:</b> you; your own coach; your academy\'s admin. Coaches and admins at a different academy on this same deployment cannot see your personal data — match calendar entries are the one thing shared across academies, since events like State Championships aren\'t specific to one academy.</p>' +
+    '<p style="margin:0 0 10px"><b>What\'s never sent automatically:</b> nothing goes to WhatsApp, SMS, or any third party without a person at your academy actively choosing to — e.g. a coach tapping "Open WhatsApp" opens a pre-filled chat for a human to review and send; it is never sent silently in the background.</p>' +
+    '<p style="margin:0 0 10px"><b>Your choices:</b> you can ask your coach or admin to correct or delete your data at any time.</p>' +
+    '<p style="margin:0;color:var(--paper-dim);font-style:italic">This is a plain-language notice, not a legal document. If this app is used commercially or at scale, it should be replaced with a real privacy policy reviewed by a lawyer for your jurisdiction.</p>' +
+    '</div>' +
+    '<button class="btn-brass" style="margin-top:14px" onclick="togglePrivacyNotice()">Close</button>' +
+    '</div></div>';
 }
 function setBusy(b) { state.busy = b; }
+const inFlightActions = new Set();
+async function withActionLock(key, fn) {
+  if (inFlightActions.has(key)) return; // already running — a double-click, not a new request
+  inFlightActions.add(key);
+  try {
+    await fn();
+  } finally {
+    inFlightActions.delete(key);
+  }
+}
 
 // =============================================================================
 // Boot / auth
@@ -615,12 +662,20 @@ async function fetchProfile() {
 async function routeAfterAuth() {
   if (state.profile.role === 'student') {
     const { data, error } = await sb.from('students').select('*').eq('id', state.profile.id).single();
-    if (error) { showToast('Signed in, but could not load your student record: ' + error.message + ' (if this is a test account from before a recent fix, ask whoever manages the database to run the backfill migration.)'); }
+    if (error || !data) {
+      await logout();
+      showToast('Signed in, but your shooter profile hasn\'t been set up correctly — please contact your coach or admin to fix this.');
+      return;
+    }
     state.me = data;
     await enterStudentDashboard();
   } else if (state.profile.role === 'coach') {
     const { data, error } = await sb.from('coaches').select('*').eq('id', state.profile.id).single();
-    if (error) { showToast('Signed in, but could not load your coach record: ' + error.message + ' (if this is a test account from before a recent fix, ask whoever manages the database to run the backfill migration.)'); }
+    if (error || !data) {
+      await logout();
+      showToast('Signed in, but your coach profile hasn\'t been set up correctly — please contact your admin to fix this.');
+      return;
+    }
     state.me = data;
     await enterCoachDashboard();
   } else {
@@ -801,6 +856,12 @@ async function submitSignUp() {
       if (photoErr) showToast('Account created, but saving the photo failed: ' + photoErr.message);
     }
   }
+  // The signup form (the only place that reads this preview) won't be
+  // rendered again after routeAfterAuth() below — release it here rather
+  // than leaking the blob URL for the rest of the tab's lifetime.
+  if (state.pendingPhotoPreviewUrl) URL.revokeObjectURL(state.pendingPhotoPreviewUrl);
+  state.pendingPhotoFile = null;
+  state.pendingPhotoPreviewUrl = null;
 
   state.session = signUpData.session;
   state.profile = { id: user.id, role, name };
@@ -859,32 +920,34 @@ function getBroadcastRecipients(audienceRole, audienceCategory, audienceFeeStatu
 }
 async function sendBroadcast() {
   if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
-  const f = state.broadcastForm;
-  const message = f.message.trim();
-  if (!message) { showToast('Please write a message.'); return; }
-  const isAdmin = state.profile.role === 'admin';
-  const targetCoachId = isAdmin ? (f.targetCoachId || null) : state.me.id;
-  const recipients = getBroadcastRecipients(f.audienceRole, f.audienceCategory || null, f.audienceFeeStatus || null, targetCoachId);
-  if (recipients.length === 0) { showToast('No matching recipients found for that audience.'); return; }
+  return withActionLock('sendBroadcast-' + state.me.id, async () => {
+    const f = state.broadcastForm;
+    const message = f.message.trim();
+    if (!message) { showToast('Please write a message.'); return; }
+    const isAdmin = state.profile.role === 'admin';
+    const targetCoachId = isAdmin ? (f.targetCoachId || null) : state.me.id;
+    const recipients = getBroadcastRecipients(f.audienceRole, f.audienceCategory || null, f.audienceFeeStatus || null, targetCoachId);
+    if (recipients.length === 0) { showToast('No matching recipients found for that audience.'); return; }
 
-  const { error } = await sb.from('notification_broadcasts').insert({
-    message, audience_role: f.audienceRole, audience_category: f.audienceCategory || null,
-    audience_fee_status: f.audienceFeeStatus || null, target_coach_id: targetCoachId,
-    channel: f.channel, recipient_count: recipients.length, sent_by: state.me.id, sent_by_name: state.me.name,
+    const { error } = await sb.from('notification_broadcasts').insert({
+      message, audience_role: f.audienceRole, audience_category: f.audienceCategory || null,
+      audience_fee_status: f.audienceFeeStatus || null, target_coach_id: targetCoachId,
+      channel: f.channel, recipient_count: recipients.length, sent_by: state.me.id, sent_by_name: state.me.name,
+    });
+    if (error) { showToast('Could not send broadcast: ' + error.message); return; }
+
+    await fetchMyBroadcasts();
+    state.lastBroadcastRecipients = f.channel === 'whatsapp' ? recipients.filter((r) => r.phone) : [];
+    state.lastBroadcastMessage = message;
+    state.broadcastForm.message = '';
+    render();
+    showToast(
+      f.channel === 'app' ? 'Sent to ' + recipients.length + ' recipient(s) — they\'ll see it in their dashboard.' :
+      f.channel === 'whatsapp' ? 'Recorded — click through the ' + state.lastBroadcastRecipients.length + ' WhatsApp link(s) below to actually send.' :
+      'Recorded as an SMS broadcast (' + recipients.length + ' recipients) — see the SMS integration note below to actually wire up sending.',
+      'success'
+    );
   });
-  if (error) { showToast('Could not send broadcast: ' + error.message); return; }
-
-  await fetchMyBroadcasts();
-  state.lastBroadcastRecipients = f.channel === 'whatsapp' ? recipients.filter((r) => r.phone) : [];
-  state.lastBroadcastMessage = message;
-  state.broadcastForm.message = '';
-  render();
-  showToast(
-    f.channel === 'app' ? 'Sent to ' + recipients.length + ' recipient(s) — they\'ll see it in their dashboard.' :
-    f.channel === 'whatsapp' ? 'Recorded — click through the ' + state.lastBroadcastRecipients.length + ' WhatsApp link(s) below to actually send.' :
-    'Recorded as an SMS broadcast (' + recipients.length + ' recipients) — see the SMS integration note below to actually wire up sending.',
-    'success'
-  );
 }
 async function saveCurrentAsTemplate() {
   if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
@@ -910,7 +973,7 @@ async function deleteTemplate(id) {
 }
 function whatsAppRecipientList() {
   if (!state.lastBroadcastRecipients || state.lastBroadcastRecipients.length === 0) return '';
-  return '<div style="border-top:2px dashed var(--line-strong);margin-top:14px;padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Click through to send via WhatsApp</div>' +
+  return '<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Click through to send via WhatsApp</div>' +
     '<div style="font-size:10px;color:var(--paper-dim);margin-bottom:8px">WhatsApp only opens one chat at a time — tap each contact below.</div>' +
     '<div class="logbook">' + state.lastBroadcastRecipients.map((r) => {
       const personalized = applyTemplateVars(state.lastBroadcastMessage, { name: r.name });
@@ -957,9 +1020,9 @@ function notificationHubSection() {
     '</div>' +
     '<button class="btn-brass" style="margin-top:10px" onclick="sendBroadcast()">Send broadcast</button>' +
     (f.channel === 'sms' ? '<div style="margin-top:10px;padding:9px 10px;background:var(--line-soft);border-radius:6px;font-size:10.5px;color:var(--paper-dim)">SMS isn\'t wired to a real provider yet. To actually send: sign up with an SMS API (e.g. Twilio, MSG91), build a Supabase Edge Function that takes the recipient list and calls your provider\'s send API with the secret key stored server-side (never in this app\'s code), then trigger it after a broadcast is recorded here.</div>' : '') +
-    (templates.length ? '<div style="border-top:2px dashed var(--line-strong);margin-top:14px;padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Saved templates</div><div class="logbook">' +
-      templates.map((t) => '<div class="log-row"><span style="font-size:12px;flex:1">' + escapeAttr(t.title) + '</span><button class="icon-btn small" title="Delete" onclick="deleteTemplate(' + t.id + ')">' + icon('x', 10) + '</button></div>').join('') + '</div></div>' : '') +
-    (myBroadcasts.length ? '<div style="border-top:2px dashed var(--line-strong);margin-top:14px;padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Recent broadcasts you sent</div><div class="logbook">' +
+    (templates.length ? '<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Saved templates</div><div class="logbook">' +
+      templates.map((t) => '<div class="log-row"><span style="font-size:12px;flex:1">' + escapeAttr(t.title) + '</span><button class="icon-btn small" title="Delete" onclick="askConfirm(\'Delete this template?\', \'deleteTemplate\', [' + t.id + '])">' + icon('x', 10) + '</button></div>').join('') + '</div></div>' : '') +
+    (myBroadcasts.length ? '<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Recent broadcasts you sent</div><div class="logbook">' +
       myBroadcasts.map((b) => '<div class="log-row"><span style="font-size:11.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeAttr(b.message) + '</span><span class="mono-sm" style="color:var(--paper-dim);margin-right:6px">' + b.recipient_count + ' · ' + b.channel + '</span></div>').join('') + '</div></div>' : '') +
     whatsAppRecipientList() +
     '</div></div>';
@@ -983,6 +1046,20 @@ function getQualificationStatus(studentId, category) {
     const best = scores.length ? Math.max(...scores) : null;
     return Object.assign({}, s, { best, achieved: best !== null && best >= s.cutoff_score });
   }).sort((a, b) => a.cutoff_score - b.cutoff_score);
+}
+async function saveCoachEvaluation(studentId) {
+  if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
+  const textarea = document.getElementById('coachEvalInput_' + studentId);
+  const text = textarea.value.trim();
+  try {
+    const { error } = await sb.from('students').update({ coach_evaluation: text || null }).eq('id', studentId);
+    if (error) throw error;
+    const s = state.cache.students.find((x) => x.id === studentId);
+    if (s) s.coach_evaluation = text || null;
+    showToast('Evaluation saved.', 'success');
+  } catch (err) {
+    showToast('Could not save evaluation — ' + (err && err.message ? err.message : 'please try again.'));
+  }
 }
 async function markNationalQualifiedFromStandard(studentId) {
   if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
@@ -1201,7 +1278,47 @@ function performanceAnalysis(data, max) {
   const consistency = stdDev < max * 0.03 ? 'Very consistent' : stdDev < max * 0.06 ? 'Some variation' : 'High variation';
   return { avg, best, trend, trendColor, consistency };
 }
-function scorePanel(studentId, mode, allowLogging) {
+function getAllSessions(studentId) {
+  const all = (state.scoresByStudent[studentId] || []).slice();
+  const bestMap = {};
+  all.forEach((s) => {
+    const key = s.shots + '-' + s.mode;
+    if (bestMap[key] === undefined || s.score > bestMap[key]) bestMap[key] = s.score;
+  });
+  return all.map((s) => Object.assign({}, s, { isBest: s.score === bestMap[s.shots + '-' + s.mode] }))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+function combinedTrendData(studentId) {
+  const sessions = getAllSessions(studentId).slice().reverse();
+  return sessions.map((s, i) => ({
+    session: 'S' + (i + 1),
+    score: (Number(s.score) / (s.mode === 'decimal' ? MAX_DECIMAL[s.shots] : MAX_INTEGER[s.shots])) * 100,
+  }));
+}
+function openAllSessions(studentId) { state.showAllSessions = true; state.allSessionsStudentId = studentId; render(); }
+function closeAllSessions() { state.showAllSessions = false; render(); }
+function allSessionsModal() {
+  if (!state.showAllSessions) return '';
+  const studentId = state.allSessionsStudentId;
+  const sessions = getAllSessions(studentId);
+  const trend = combinedTrendData(studentId);
+  return '<div class="modal-overlay" onclick="if(event.target===this) closeAllSessions()"><div class="modal-card" style="max-width:480px;max-height:80vh;overflow-y:auto;text-align:left">' +
+    '<div class="eyebrow" style="margin-bottom:10px">All logged sessions</div>' +
+    (sessions.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim)">No sessions logged yet.</div>' : (
+      '<div style="font-size:9.5px;color:var(--paper-dim);margin-bottom:4px">Overall trend — every session as a % of its own maximum, so different shot counts and scoring modes can sit on one line.</div>' +
+      lineChartSvg(trend, 100, 40) +
+      '<div class="logbook" style="margin-top:10px">' + sessions.map((s) =>
+        '<div class="log-row" style="align-items:flex-start"><div style="flex:1;min-width:0">' +
+        '<div style="font-size:12px;font-weight:600">' + escapeAttr(s.session_name || 'Practice session') + '</div>' +
+        '<div style="font-size:10px;color:var(--paper-dim)">' + new Date(s.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + s.shots + ' shots · ' + (s.mode === 'decimal' ? 'Decimal' : 'Whole') + '</div></div>' +
+        '<div style="text-align:right"><div class="mono-sm" style="font-size:13px">' + (s.mode === 'decimal' ? Number(s.score).toFixed(1) : Math.round(s.score)) + '</div>' +
+        (s.isBest ? '<span class="stamp" style="--stamp-color:var(--forest)">' + icon('check', 9, 'var(--forest)') + ' BEST</span>' : '<span style="font-size:9.5px;color:var(--paper-dim)">Completed</span>') + '</div></div>'
+      ).join('') + '</div>'
+    )) +
+    '<button class="btn-brass" style="margin-top:14px" onclick="closeAllSessions()">Close</button>' +
+    '</div></div>';
+}
+function scorePanel(studentId, mode) {
   const shots = Number(state.chartMatchType);
   const max = mode === 'decimal' ? MAX_DECIMAL[shots] : MAX_INTEGER[shots];
   const perShot = mode === 'decimal' ? 10.9 : 10;
@@ -1212,40 +1329,72 @@ function scorePanel(studentId, mode, allowLogging) {
   const label = mode === 'decimal' ? 'Decimal scoring (10.9/shot)' : 'Whole scoring (10.0/shot)';
   return '<div class="score-panel"><div class="eyebrow" style="margin-bottom:8px">' + label + '</div>' +
     '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:8px">Max for ' + state.chartMatchType + ' shots: <span class="mono-sm" style="color:var(--paper)">' + max.toFixed(1) + '</span> (' + perShot + ' pts/shot)</div>' +
-    (data.length === 0 ? '<div style="text-align:center;padding:20px 0;color:var(--paper-dim);font-size:11.5px;border:1px dashed var(--line);border-radius:6px">No sessions logged yet.' + (allowLogging ? '<br/>Add your first score below.' : '') + '</div>' :
+    (data.length === 0 ? '<div style="text-align:center;padding:20px 0;color:var(--paper-dim);font-size:11.5px;border:1px dashed var(--line-strong);border-radius:8px">No sessions logged yet.</div>' :
     lineChartSvg(data, max, yFloor) +
     (analysis ? '<div class="analysis-grid"><div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:var(--paper)">' + fmt(analysis.avg) + '</div><div class="eyebrow" style="font-size:9px">Average</div></div>' +
       '<div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:var(--paper)">' + fmt(analysis.best) + '</div><div class="eyebrow" style="font-size:9px">Best</div></div>' +
       '<div class="analysis-cell"><div class="mono-sm" style="font-size:13px;color:' + analysis.trendColor + '">' + analysis.trend + '</div><div class="eyebrow" style="font-size:9px">Trend</div></div>' +
       '<div class="analysis-cell"><div class="mono-sm" style="font-size:11.5px;color:var(--paper)">' + analysis.consistency + '</div><div class="eyebrow" style="font-size:9px">Consistency</div></div></div>'
-      : '<div style="font-size:10.5px;color:var(--paper-dim);margin:6px 0">Log at least 2 sessions to see your performance analysis.</div>')) +
-    (allowLogging ? '<div style="margin-top:12px;border-top:2px dashed var(--line-strong);padding-top:10px"><div class="eyebrow" style="margin-bottom:6px">Log a session score</div>' +
-      '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:6px">Enter your ' + state.chartMatchType + '-shot score out of ' + max.toFixed(1) + '</div>' +
-      '<input id="sessionScoreInput_' + mode + '" class="text-input" type="number" step="0.1" min="0" max="' + max + '" placeholder="e.g. ' + (max * 0.75).toFixed(1) + '" style="margin-bottom:8px"/>' +
-      '<button class="btn-brass" onclick="logSessionScore(\'' + mode + '\')">Add session</button></div>' : '') + '</div>';
+      : '<div style="font-size:10.5px;color:var(--paper-dim);margin:6px 0">Log at least 2 sessions to see your performance analysis.</div>')) + '</div>';
+}
+// One unified entry step for both scoring systems at once, instead of two
+// separate forms — a single string of shots naturally has both a whole
+// score and (if you count inner-tens) a decimal score, so logging them
+// together matches how a session actually works instead of treating them
+// as two different sessions.
+function sessionLogForm(studentId) {
+  const shots = Number(state.chartMatchType);
+  const maxInt = MAX_INTEGER[shots], maxDec = MAX_DECIMAL[shots];
+  return '<div class="card span-2"><div class="eyebrow" style="margin-bottom:4px">Log a session</div>' +
+    '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:10px">For the ' + shots + '-shot distance selected above.</div>' +
+    '<label class="field-label" style="margin-top:0">Session or competition name — optional</label>' +
+    '<input id="sessionName" class="text-input" placeholder="e.g. Academy Monthly Match #8"/>' +
+    '<label class="field-label">Whole score (out of ' + maxInt + ')</label>' +
+    '<input id="sessionIntScore" class="text-input" type="number" min="0" max="' + maxInt + '" placeholder="e.g. ' + Math.round(maxInt * 0.85) + '"/>' +
+    '<label class="field-label">Decimal score (out of ' + maxDec.toFixed(1) + ') — optional</label>' +
+    '<input id="sessionDecScore" class="text-input" type="number" step="0.1" min="0" max="' + maxDec + '" placeholder="e.g. ' + (maxDec * 0.85).toFixed(1) + '"/>' +
+    '<button class="btn-brass" style="margin-top:10px" onclick="logUnifiedSession(\'' + studentId + '\')">Log session</button>' +
+    '</div>';
 }
 function matchScoreSection(studentId, allowLogging) {
-  return '<div class="toolbar" style="margin-bottom:12px">' +
-    MATCH_TYPES.map((t) => '<button class="chip ' + (state.chartMatchType === t ? 'chip-active' : '') + '" onclick="setChartMatchType(\'' + t + '\')">' + t + ' shots</button>').join('') + '</div>' +
-    '<div class="score-views">' + scorePanel(studentId, 'integer', allowLogging) + scorePanel(studentId, 'decimal', allowLogging) + '</div>';
+  return '<div class="toolbar" style="margin-bottom:12px;justify-content:space-between;align-items:center">' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">' + MATCH_TYPES.map((t) => '<button class="chip ' + (state.chartMatchType === t ? 'chip-active' : '') + '" onclick="setChartMatchType(\'' + t + '\')">' + t + ' shots</button>').join('') + '</div>' +
+    '<button class="chip" onclick="openAllSessions(\'' + studentId + '\')">' + icon('target', 11) + ' All sessions</button>' +
+    '</div>' +
+    '<div class="score-views">' + scorePanel(studentId, 'integer') + scorePanel(studentId, 'decimal') + '</div>' +
+    (allowLogging ? sessionLogForm(studentId) : '');
 }
 function setChartMatchType(t) { state.chartMatchType = t; render(); }
-async function logSessionScore(mode) {
-  const input = document.getElementById('sessionScoreInput_' + mode);
-  const val = parseFloat(input.value);
+async function logUnifiedSession(studentId) {
   const shots = Number(state.chartMatchType);
-  const max = mode === 'decimal' ? MAX_DECIMAL[shots] : MAX_INTEGER[shots];
-  if (isNaN(val) || val < 0 || val > max) { showToast('Please enter a score between 0 and ' + max.toFixed(1) + '.'); return; }
-  const scoreVal = mode === 'decimal' ? Math.round(val * 10) / 10 : Math.round(val);
-  const existing = scoresFor(state.me.id, shots, mode);
-  await sb.from('match_scores').insert({ student_id: state.me.id, shots, mode, session_label: 'M' + (existing.length + 1), score: scoreVal });
-  await loadScoresFor(state.me.id);
+  const maxInt = MAX_INTEGER[shots], maxDec = MAX_DECIMAL[shots];
+  const nameInput = document.getElementById('sessionName');
+  const intInput = document.getElementById('sessionIntScore');
+  const decInput = document.getElementById('sessionDecScore');
+  const sessionName = nameInput.value.trim() || null;
+  const intVal = parseFloat(intInput.value);
+  const decRaw = decInput.value.trim();
+  const decVal = decRaw === '' ? null : parseFloat(decRaw);
+
+  if (isNaN(intVal) || intVal < 0 || intVal > maxInt) { showToast('Please enter a whole score between 0 and ' + maxInt + '.'); return; }
+  if (decRaw !== '' && (isNaN(decVal) || decVal < 0 || decVal > maxDec)) { showToast('Please enter a decimal score between 0 and ' + maxDec.toFixed(1) + ', or leave it blank.'); return; }
+
+  const existingInt = scoresFor(studentId, shots, 'integer');
+  const label = 'M' + (existingInt.length + 1);
+  const rows = [{ student_id: studentId, shots, mode: 'integer', session_label: label, session_name: sessionName, score: Math.round(intVal) }];
+  if (decVal !== null) rows.push({ student_id: studentId, shots, mode: 'decimal', session_label: label, session_name: sessionName, score: Math.round(decVal * 10) / 10 });
+
+  const { error } = await sb.from('match_scores').insert(rows);
+  if (error) { showToast('Could not log session: ' + error.message); return; }
+  nameInput.value = ''; intInput.value = ''; decInput.value = '';
+  await loadScoresFor(studentId);
   render();
+  showToast('Session logged.', 'success');
 }
 
 // Calendar
 function typeColor(type) { return TYPE_COLORS[type] || 'var(--brass)'; }
-function calendarButton() { return '<button class="icon-btn" onclick="toggleCalendar()">' + icon('calendar', 18) + (state.cache.reminders.length ? '<span class="dot-badge"></span>' : '') + '</button>'; }
+function calendarButton() { return '<button class="icon-btn" aria-label="Match calendar" onclick="toggleCalendar()">' + icon('calendar', 18) + (state.cache.reminders.length ? '<span class="dot-badge"></span>' : '') + '</button>'; }
 function toggleCalendar() { state.calendarOpen = !state.calendarOpen; render(); }
 let lastCalWheelTime = 0;
 function handleCalWheel(e) {
@@ -1284,7 +1433,7 @@ function monthCalendar() {
     const d = new Date(r.date + 'T00:00:00');
     if (d.getFullYear() === year && d.getMonth() === month) { remindersByDay[d.getDate()] = remindersByDay[d.getDate()] || []; remindersByDay[d.getDate()].push(r); }
   });
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = localIsoDate();
   let cells = '';
   for (let i = 0; i < startWeekday; i++) cells += '<div class="cal-cell empty">·</div>';
   for (let day = 1; day <= daysInMonth; day++) {
@@ -1292,14 +1441,14 @@ function monthCalendar() {
     const dots = (remindersByDay[day] || []).slice(0, 3).map((r) => '<span class="cal-dot" style="background:' + typeColor(r.type) + '"></span>').join('');
     cells += '<div class="cal-cell' + (iso === todayIso ? ' today' : '') + (state.selectedReminderDate === iso ? ' selected' : '') + '" onclick="selectCalendarDate(\'' + iso + '\')"><span>' + day + '</span><div class="cal-dots">' + dots + '</div></div>';
   }
-  return '<div onwheel="handleCalWheel(event)" title="Scroll to change month"><div class="cal-nav"><button class="icon-btn small" onclick="shiftCalendarMonth(-1)">' + icon('chevronLeft', 12) + '</button>' +
-    '<span class="eyebrow" style="font-size:11px">' + monthName + '</span><button class="icon-btn small" onclick="shiftCalendarMonth(1)">' + icon('chevronRight', 12) + '</button></div>' +
+  return '<div onwheel="handleCalWheel(event)" title="Scroll to change month"><div class="cal-nav"><button class="icon-btn small" aria-label="Previous month" onclick="shiftCalendarMonth(-1)">' + icon('chevronLeft', 12) + '</button>' +
+    '<span class="eyebrow" style="font-size:11px">' + monthName + '</span><button class="icon-btn small" aria-label="Next month" onclick="shiftCalendarMonth(1)">' + icon('chevronRight', 12) + '</button></div>' +
     '<div class="cal-weekdays">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => '<div>' + d + '</div>').join('') + '</div><div class="cal-grid">' + cells + '</div>' +
     '<div style="font-size:8.5px;color:var(--paper-dim);text-align:center;margin-top:3px">scroll ↑ ↓ to change month</div></div>';
 }
 function addReminderForm() {
   const dateVal = state.selectedReminderDate || '';
-  return '<div style="margin-top:10px;border-top:2px dashed var(--line-strong);padding-top:10px">' +
+  return '<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">' +
     '<label class="field-label" style="margin-top:0">Competition / match name</label><input id="remTitle" class="text-input" placeholder="e.g. State Championship Trials" style="margin-bottom:6px"/>' +
     '<label class="field-label">Date</label><input id="remDate" class="text-input" type="date" value="' + dateVal + '" style="margin-bottom:6px"/>' +
     '<label class="field-label">Type</label><select id="remType" class="text-input" style="margin-bottom:6px">' + REMINDER_TYPES.map((t) => '<option>' + t + '</option>').join('') + '</select>' +
@@ -1311,18 +1460,18 @@ function calendarPopover(shooterCategory) {
   if (!state.calendarOpen) return '';
   const year = state.calendarViewDate.year, month = state.calendarViewDate.month;
   const monthReminders = state.cache.reminders.filter((r) => { const d = new Date(r.date + 'T00:00:00'); return d.getFullYear() === year && d.getMonth() === month; }).sort((a, b) => a.date.localeCompare(b.date));
-  return '<div class="popover cal-popover"><div class="popover-head"><span class="eyebrow">Match calendar</span><button class="icon-btn small" onclick="toggleCalendar()">' + icon('x', 14) + '</button></div>' +
+  return '<div class="popover cal-popover"><div class="popover-head"><span class="eyebrow">Match calendar</span><button class="icon-btn small" aria-label="Close calendar" onclick="toggleCalendar()">' + icon('x', 14) + '</button></div>' +
     monthCalendar() +
     '<div class="cal-legend">' + REMINDER_TYPES.map((t) => '<span class="legend-item"><span class="legend-dot" style="background:' + typeColor(t) + '"></span>' + t + '</span>').join('') + '</div>' +
     (shooterCategory ? '<div style="font-size:9.5px;color:var(--paper-dim);margin-bottom:6px">Eligibility shown for your profile: <b style="color:var(--paper)">' + shooterCategory + ' shooter</b></div>' : '') +
     '<div class="reminder-list">' + (monthReminders.length ? monthReminders.map((r) => {
       const elig = shooterCategory ? eligibilityInfo(r.type, shooterCategory) : null;
       const eligHtml = elig ? '<div style="margin-top:4px"><span class="elig-badge" style="--elig-color:' + (elig.ok === true ? 'var(--forest)' : 'var(--brass)') + '">' + (elig.ok === true ? 'Eligible' : 'Conditional') + '</span><div style="font-size:9px;color:var(--paper-dim);margin-top:2px;line-height:1.4">' + elig.note + '</div></div>' : '';
-      return '<div class="reminder-row" style="align-items:flex-start"><div style="display:flex;align-items:flex-start;gap:6px;min-width:0"><span class="legend-dot" style="background:' + typeColor(r.type) + ';margin-top:3px"></span><div style="min-width:0"><div style="font-weight:600;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + r.title + '</div><div style="font-size:9.5px;color:var(--paper-dim)">' + formatDate(r.date) + ' · ' + daysUntil(r.date) + '</div>' + (r.venue ? '<div style="font-size:9px;color:var(--paper-dim)">📍 ' + r.venue + '</div>' : '') + eligHtml + '</div></div><button class="icon-btn small" onclick="deleteReminder(' + r.id + ')">' + icon('x', 10) + '</button></div>';
+      return '<div class="reminder-row" style="align-items:flex-start"><div style="display:flex;align-items:flex-start;gap:6px;min-width:0"><span class="legend-dot" style="background:' + typeColor(r.type) + ';margin-top:3px"></span><div style="min-width:0"><div style="font-weight:600;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeAttr(r.title) + '</div><div style="font-size:9.5px;color:var(--paper-dim)">' + formatDate(r.date) + ' · ' + daysUntil(r.date) + '</div>' + (r.venue ? '<div style="font-size:9px;color:var(--paper-dim)">📍 ' + escapeAttr(r.venue) + '</div>' : '') + eligHtml + '</div></div><button class="icon-btn small" onclick="askConfirm(\'Delete this reminder?\', \'deleteReminder\', [' + r.id + '])">' + icon('x', 10) + '</button></div>';
     }).join('') : '<div style="font-size:11.5px;color:var(--paper-dim);padding:4px 0">No reminders this month.</div>') + '</div>' +
     '<button class="chip chip-active" style="width:100%;margin-top:8px;text-align:center" onclick="openAddReminderForDate()">+ Add reminder' + (state.selectedReminderDate ? ' for ' + formatDate(state.selectedReminderDate) : '') + '</button>' +
     (state.addReminderOpen ? addReminderForm() : '') +
-    (shooterCategory ? '<div style="font-size:8.5px;color:var(--paper-dim);margin-top:8px;padding-top:8px;border-top:2px dashed var(--line-strong);line-height:1.4">Simplified guide based on the NRAI Match Book — confirm current eligibility with your State Association.</div>' : '') + '</div>';
+    (shooterCategory ? '<div style="font-size:8.5px;color:var(--paper-dim);margin-top:8px;padding-top:8px;border-top:1px solid var(--line);line-height:1.4">Simplified guide based on the NRAI Match Book — confirm current eligibility with your State Association.</div>' : '') + '</div>';
 }
 
 // Fees / payments / invoices
@@ -1419,15 +1568,19 @@ async function payVia(method) {
   showToast('Opening ' + method + ' to complete your payment of ₹' + fee.toLocaleString('en-IN') + '. Once your coach confirms they\'ve received it, your status will update to Paid and your invoice will be ready to download.', 'info');
 }
 async function confirmPayment(studentId) {
-  const student = state.cache.students.find((s) => s.id === studentId);
-  const method = (student && student.pending_method) || 'Cash';
-  const nextDueOn = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const nextDueDisplay = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-  await sb.from('students').update({ fee_status: 'PAID', pending_method: null, next_due_on: nextDueOn, due_date: nextDueDisplay }).eq('id', studentId);
-  if (student) { student.fee_status = 'PAID'; student.pending_method = null; student.next_due_on = nextDueOn; student.due_date = nextDueDisplay; }
-  if (student) await generateInvoice(student, method);
-  await fetchStudents();
-  render();
+  return withActionLock('confirmPayment-' + studentId, async () => {
+    const student = state.cache.students.find((s) => s.id === studentId);
+    const method = (student && student.pending_method) || 'Cash';
+    const nextDue = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const nextDueOn = localIsoDate(nextDue);
+    const nextDueDisplay = nextDue.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    await sb.from('students').update({ fee_status: 'PAID', pending_method: null, next_due_on: nextDueOn, due_date: nextDueDisplay }).eq('id', studentId);
+    if (student) { student.fee_status = 'PAID'; student.pending_method = null; student.next_due_on = nextDueOn; student.due_date = nextDueDisplay; }
+    if (student) await generateInvoice(student, method);
+    await fetchStudents();
+    render();
+    showToast((method + ' payment confirmed — invoice generated' + (student ? ' for ' + student.name : '') + '. They\'ll see it in their dashboard.'), 'success');
+  });
 }
 function findInvoice(id) { return (state.cache.myInvoices || []).concat(state.cache.invoices || []).find((i) => i.id === id); }
 function closeInvoice() { state.invoiceOpenId = null; render(); }
@@ -1525,46 +1678,77 @@ async function downloadProgressReportPDF() {
   const student = state.me;
   if (!window.jspdf) { showToast('PDF library is still loading — please try again in a moment.'); return; }
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'pt', format: 'a5' });
-  const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
-  const brass = [29, 111, 224], ink = [18, 35, 63], dim = [100, 120, 144], line = [211, 227, 245], forest = [46, 139, 87];
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const brass = [29, 111, 224], ink = [18, 35, 63], dim = [100, 120, 144], line = [211, 227, 245], forest = [46, 139, 87], warn = [184, 134, 11];
+  const marginX = 40;
+  let y = 0;
 
-  doc.setFillColor(234, 242, 252); doc.rect(0, 0, pageW, pageH, 'F');
-  doc.setDrawColor(brass[0], brass[1], brass[2]); doc.setLineWidth(1.2); doc.rect(18, 18, pageW - 36, pageH - 36);
+  const sectionHeader = (title) => {
+    y += 8;
+    doc.setFillColor(brass[0], brass[1], brass[2]); doc.rect(marginX, y, 3, 12, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(ink[0], ink[1], ink[2]);
+    doc.text(title.toUpperCase(), marginX + 9, y + 10);
+    y += 22;
+  };
+  const kvRow = (k, v, valueColor) => {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(dim[0], dim[1], dim[2]);
+    doc.text(k, marginX, y);
+    const c = valueColor || ink;
+    doc.setTextColor(c[0], c[1], c[2]); doc.setFont('helvetica', 'bold');
+    doc.text(String(v), pageW - marginX, y, { align: 'right' });
+    y += 15;
+  };
 
-  doc.setTextColor(brass[0], brass[1], brass[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
-  doc.text('RANGE LEDGER', pageW / 2, 46, { align: 'center' });
-  doc.setTextColor(dim[0], dim[1], dim[2]); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-  doc.text('Shooter Progress Report', pageW / 2, 60, { align: 'center' });
-  let y = 76;
-  doc.setDrawColor(line[0], line[1], line[2]); doc.setLineWidth(0.7); doc.line(30, y, pageW - 30, y);
-  y += 24;
+  // Header
+  doc.setFillColor(234, 242, 252); doc.rect(0, 0, pageW, 842, 'F');
+  doc.setFillColor(ink[0], ink[1], ink[2]); doc.rect(0, 0, pageW, 74, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+  doc.text('RANGE LEDGER', pageW / 2, 30, { align: 'center' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(180, 200, 230);
+  doc.text('P R E C I S I O N   S H O O T I N G   A C A D E M Y   M A N A G E M E N T   S Y S T E M', pageW / 2, 43, { align: 'center' });
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(255, 255, 255);
+  doc.text('SHOOTER PROGRESS REPORT', pageW / 2, 62, { align: 'center' });
+  y = 92;
+  const reportId = 'PR-' + new Date().getFullYear() + '-' + String(student.id).replace(/[^0-9]/g, '').slice(0, 4).padStart(4, '0');
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(dim[0], dim[1], dim[2]);
+  doc.text('Report ID: ' + reportId, marginX, y);
+  doc.text('Report Generated: ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), pageW - marginX, y, { align: 'right' });
+  y += 20;
 
-  doc.setTextColor(ink[0], ink[1], ink[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-  doc.text(student.name, 30, y);
-  y += 16;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(dim[0], dim[1], dim[2]);
-  const infoLine = [student.category, student.shooter_category ? student.shooter_category + ' shooter' : null, student.nrai_shooter_id ? 'ID: ' + student.nrai_shooter_id : null].filter(Boolean).join('  ·  ');
-  doc.text(infoLine, 30, y);
-  y += 10;
-  doc.text('Report generated ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), 30, y);
-  y += 24;
+  // Shooter profile
+  sectionHeader('Shooter Profile');
+  kvRow('Shooter Name', student.name);
+  kvRow('Shooter ID', student.nrai_shooter_id || '—');
+  kvRow('Discipline', student.category + (student.shooter_category ? ' ' + student.shooter_category : ''));
 
+  // Coach & range details
+  sectionHeader('Assigned Coach & Range Details');
+  const coachName = (state.cache.myCoach && state.cache.myCoach.name) || student.coach_name || 'Not yet assigned';
+  const standards = getQualificationStatus(student.id, student.category);
+  const highestMet = standards.filter((s) => s.achieved).sort((a, b) => b.cutoff_score - a.cutoff_score)[0];
+  kvRow('Head Coach', coachName);
+  kvRow('Category', student.shooter_category ? student.shooter_category + ' shooter' : student.category);
+  kvRow('Rank Tier', highestMet ? highestMet.tier + ' Qualification Level' : 'Not yet qualified');
+
+  // Attendance summary — three stat boxes
+  sectionHeader('Attendance Summary');
   const log = (state.cache.myAttendance || []).filter((r) => r.status !== 'PENDING').sort((a, b) => b.id - a.id);
   const streak = computeAttendanceStreak(log);
   const totalSessions = (state.scoresByStudent[student.id] || []).length;
+  const boxW = (pageW - marginX * 2 - 20) / 3;
+  [[student.attendance + '%', 'OVERALL RATE'], [streak + ' session' + (streak === 1 ? '' : 's'), 'CURRENT STREAK'], [String(totalSessions), 'SESSIONS LOGGED']].forEach((box, i) => {
+    const bx = marginX + i * (boxW + 10);
+    doc.setFillColor(255, 255, 255); doc.setDrawColor(line[0], line[1], line[2]); doc.roundedRect(bx, y, boxW, 46, 4, 4, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(brass[0], brass[1], brass[2]);
+    doc.text(box[0], bx + boxW / 2, y + 22, { align: 'center' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(dim[0], dim[1], dim[2]);
+    doc.text(box[1], bx + boxW / 2, y + 36, { align: 'center' });
+  });
+  y += 62;
 
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(ink[0], ink[1], ink[2]);
-  doc.text('Attendance', 30, y); y += 16;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(dim[0], dim[1], dim[2]);
-  doc.text('Overall rate', 30, y); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text(student.attendance + '%', pageW - 30, y, { align: 'right' }); y += 15;
-  doc.setTextColor(dim[0], dim[1], dim[2]); doc.text('Current streak', 30, y); doc.setTextColor(forest[0], forest[1], forest[2]); doc.text(streak + ' session' + (streak === 1 ? '' : 's'), pageW - 30, y, { align: 'right' }); y += 15;
-  doc.setTextColor(dim[0], dim[1], dim[2]); doc.text('Sessions logged', 30, y); doc.setTextColor(ink[0], ink[1], ink[2]); doc.text(String(totalSessions), pageW - 30, y, { align: 'right' }); y += 24;
-
-  doc.setDrawColor(line[0], line[1], line[2]); doc.line(30, y, pageW - 30, y); y += 20;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(ink[0], ink[1], ink[2]);
-  doc.text('Match performance (whole scoring)', 30, y); y += 16;
-  doc.setFontSize(9.5);
+  // Match performance (whole scoring), per shot count
+  sectionHeader('Match Performance (Whole Scoring)');
   let anyScores = false;
   MATCH_TYPES.forEach((shots) => {
     const data = scoresFor(student.id, shots, 'integer');
@@ -1573,21 +1757,55 @@ async function downloadProgressReportPDF() {
     const scores = data.map((d) => d.score);
     const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
     const best = Math.max(...scores);
-    doc.setTextColor(dim[0], dim[1], dim[2]); doc.text(shots + '-shot (' + data.length + ' sessions)', 30, y);
-    doc.setTextColor(ink[0], ink[1], ink[2]); doc.text('avg ' + avg + ' · best ' + best, pageW - 30, y, { align: 'right' });
-    y += 15;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(ink[0], ink[1], ink[2]);
+    doc.text(shots + '-Shot Format (' + data.length + ' session' + (data.length === 1 ? '' : 's') + ' logged)', marginX, y); y += 13;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(dim[0], dim[1], dim[2]);
+    doc.text('Avg: ' + avg + '  |  Best: ' + best, marginX, y); y += 16;
   });
-  if (!anyScores) { doc.setTextColor(dim[0], dim[1], dim[2]); doc.text('No sessions logged yet.', 30, y); y += 15; }
-  y += 10;
+  if (!anyScores) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(dim[0], dim[1], dim[2]); doc.text('No sessions logged yet.', marginX, y); y += 15; }
 
-  doc.setDrawColor(line[0], line[1], line[2]); doc.line(30, y, pageW - 30, y); y += 20;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(ink[0], ink[1], ink[2]);
-  doc.text('Fee status', 30, y);
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(student.fee_status === 'PAID' ? forest[0] : brass[0], student.fee_status === 'PAID' ? forest[1] : brass[1], student.fee_status === 'PAID' ? forest[2] : brass[2]);
-  doc.text(student.fee_status.replace('_', ' '), pageW - 30, y, { align: 'right' });
+  // Recent match & session analytics — full table
+  sectionHeader('Recent Match & Session Analytics');
+  const sessions = getAllSessions(student.id).slice(0, 10);
+  if (sessions.length === 0) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(dim[0], dim[1], dim[2]);
+    doc.text('No sessions logged yet.', marginX, y); y += 16;
+  } else {
+    const cols = [marginX, marginX + 65, marginX + 275, marginX + 320, marginX + 375];
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(dim[0], dim[1], dim[2]);
+    ['DATE', 'SESSION / COMPETITION', 'SHOTS', 'SCORE', 'STATUS'].forEach((h, i) => doc.text(h, cols[i], y));
+    y += 6; doc.setDrawColor(line[0], line[1], line[2]); doc.line(marginX, y, pageW - marginX, y); y += 12;
+    sessions.forEach((s) => {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(ink[0], ink[1], ink[2]);
+      doc.text(new Date(s.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), cols[0], y);
+      doc.text(String(s.session_name || 'Practice session').slice(0, 34), cols[1], y);
+      doc.text(String(s.shots), cols[2], y);
+      doc.text(s.mode === 'decimal' ? Number(s.score).toFixed(1) : String(Math.round(s.score)), cols[3], y);
+      doc.setTextColor(s.isBest ? forest[0] : dim[0], s.isBest ? forest[1] : dim[1], s.isBest ? forest[2] : dim[2]);
+      doc.setFont('helvetica', s.isBest ? 'bold' : 'normal');
+      doc.text(s.isBest ? 'Personal Best' : 'Completed', cols[4], y);
+      y += 14;
+    });
+  }
+  y += 8;
 
-  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(dim[0], dim[1], dim[2]);
-  doc.text('Generated by Range Ledger — Precision Shooting Academy', pageW / 2, pageH - 22, { align: 'center' });
+  // Fee status
+  sectionHeader('Fee Status');
+  const feeColor = student.fee_status === 'PAID' ? forest : (student.fee_status === 'OVERDUE' ? [192, 57, 57] : warn);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(feeColor[0], feeColor[1], feeColor[2]);
+  doc.text(student.fee_status.replace(/_/g, ' '), marginX, y); y += 20;
+
+  // Coach evaluation, if the coach has written one
+  if (student.coach_evaluation) {
+    sectionHeader('Coach Evaluation');
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(ink[0], ink[1], ink[2]);
+    const lines = doc.splitTextToSize(student.coach_evaluation, pageW - marginX * 2);
+    doc.text(lines, marginX, y);
+    y += lines.length * 12 + 8;
+  }
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(dim[0], dim[1], dim[2]);
+  doc.text('Generated by Range Ledger — Precision Shooting Academy Management System  •  Official Electronic Record', pageW / 2, 812, { align: 'center' });
 
   doc.save(student.name.replace(/\s+/g, '-') + '-progress-report.pdf');
 }
@@ -1718,45 +1936,47 @@ function invoiceModal(invoiceId) {
   return '<div class="modal-overlay" onclick="closeInvoiceIfOverlay(event)"><div class="modal-card receipt-card" onclick="event.stopPropagation()">' +
     '<div style="text-align:center;margin-bottom:12px">' + icon('check', 26, 'var(--forest)') + '<div class="detail-name" style="margin-top:6px">Payment received</div>' +
     '<div style="font-size:11px;color:var(--paper-dim)">' + (inv.academy_name || 'Range Ledger') + ' · Invoice ' + inv.invoice_number + '</div></div>' +
-    '<div class="receipt-row"><span>Shooter</span><span>' + inv.student_name + '</span></div>' +
+    '<div class="receipt-row"><span>Shooter</span><span>' + escapeAttr(inv.student_name) + '</span></div>' +
     (inv.email ? '<div class="receipt-row"><span>Sent to</span><span style="font-size:11px">' + inv.email + '</span></div>' : '') +
     '<div class="receipt-row"><span>Category</span><span>' + inv.category + '</span></div>' +
     (inv.shooter_id ? '<div class="receipt-row"><span>NRAI Shooter ID</span><span style="font-size:11px">' + inv.shooter_id + '</span></div>' : '') +
     '<div class="receipt-row"><span>Date</span><span>' + new Date(inv.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '</span></div>' +
     '<div class="receipt-row"><span>Method</span><span>' + inv.method + '</span></div>' +
-    '<div style="margin-top:8px;border-top:2px dashed var(--line-strong);padding-top:8px">' +
+    '<div style="margin-top:8px;border-top:1px solid var(--line);padding-top:8px">' +
       items.map((it) => '<div class="receipt-row"><span style="font-size:11px">' + it.description + (it.qty > 1 ? ' × ' + it.qty : '') + '</span><span>₹' + Number(it.amount).toLocaleString('en-IN') + '</span></div>').join('') +
     '</div>' +
-    '<div class="receipt-row" style="border-top:2px dashed var(--line-strong);margin-top:6px;padding-top:8px"><span style="font-weight:600">Total paid</span><span class="mono-lg" style="font-size:18px">₹' + Number(inv.amount).toLocaleString('en-IN') + '</span></div>' +
+    '<div class="receipt-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:8px"><span style="font-weight:600">Total paid</span><span class="mono-lg" style="font-size:18px">₹' + Number(inv.amount).toLocaleString('en-IN') + '</span></div>' +
     '<button class="btn-brass" style="margin-top:14px" onclick="downloadInvoicePDF()">' + icon('rupee', 14) + ' Download PDF</button>' +
     '<button class="chip" style="width:100%;margin-top:8px;text-align:center" onclick="closeInvoice()">Done</button></div></div>';
 }
 
 // Attendance
 async function markAttendance() {
-  const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-  const alreadySynced = (state.cache.myAttendance || []).some((r) => r.requested_date === today && r.status === 'PENDING');
-  const alreadyQueued = myOfflineAttendanceActions().some((a) => a.payload.requestedDate === today);
-  if (alreadySynced || alreadyQueued) { showToast('You already have a pending request for today.'); return; }
+  return withActionLock('markAttendance-' + state.me.id, async () => {
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    const alreadySynced = (state.cache.myAttendance || []).some((r) => r.requested_date === today && r.status === 'PENDING');
+    const alreadyQueued = myOfflineAttendanceActions().some((a) => a.payload.requestedDate === today);
+    if (alreadySynced || alreadyQueued) { showToast('You already have a pending request for today.'); return; }
 
-  if (!state.isOnline || !sb) {
-    queueOfflineAction('mark_attendance', { studentId: state.me.id, requestedDate: today });
-    showToast(!sb ? 'Not connected — attendance saved on this device and will sync automatically once reconnected.' : 'You\'re offline — attendance saved on this device and will sync automatically once you\'re back online.', 'info');
-    render();
-    return;
-  }
+    if (!state.isOnline || !sb) {
+      queueOfflineAction('mark_attendance', { studentId: state.me.id, requestedDate: today });
+      showToast(!sb ? 'Not connected — attendance saved on this device and will sync automatically once reconnected.' : 'You\'re offline — attendance saved on this device and will sync automatically once you\'re back online.', 'info');
+      render();
+      return;
+    }
 
-  try {
-    const { error } = await sb.from('attendance_requests').insert({ student_id: state.me.id, requested_date: today, status: 'PENDING' });
-    if (error) throw error;
-    const { data } = await sb.from('attendance_requests').select('*').eq('student_id', state.me.id);
-    state.cache.myAttendance = data || [];
-    render();
-  } catch (err) {
-    queueOfflineAction('mark_attendance', { studentId: state.me.id, requestedDate: today });
-    showToast('Could not reach the server — saved locally and it\'ll sync automatically.', 'info');
-    render();
-  }
+    try {
+      const { error } = await sb.from('attendance_requests').insert({ student_id: state.me.id, requested_date: today, status: 'PENDING' });
+      if (error) throw error;
+      const { data } = await sb.from('attendance_requests').select('*').eq('student_id', state.me.id);
+      state.cache.myAttendance = data || [];
+      render();
+    } catch (err) {
+      queueOfflineAction('mark_attendance', { studentId: state.me.id, requestedDate: today });
+      showToast('Could not reach the server — saved locally and it\'ll sync automatically.', 'info');
+      render();
+    }
+  });
 }
 async function approveAttendance(reqId, approve) {
   if (isQueuedForSync(reqId)) { showToast('This decision is already queued to sync.'); return; }
@@ -1843,14 +2063,16 @@ async function submitRequestItem(itemId) {
   render();
 }
 async function approveRequest(issueId) {
-  const req = (state.cache.itemRequests || []).find((r) => r.id === issueId);
-  if (!req) return;
-  const item = state.cache.inventory.find((i) => i.coach_id === state.me.id && i.name === req.item_name);
-  if (!item || item.quantity < req.quantity) { showToast('Not enough stock to approve this — only ' + (item ? item.quantity : 0) + ' left.'); return; }
-  await sb.from('inventory_items').update({ quantity: item.quantity - req.quantity }).eq('id', item.id);
-  await sb.from('inventory_issues').update({ status: 'issued' }).eq('id', issueId);
-  await Promise.all([fetchInventory(state.me.id), fetchItemRequests(state.me.id)]);
-  render();
+  return withActionLock('approveRequest-' + issueId, async () => {
+    const req = (state.cache.itemRequests || []).find((r) => r.id === issueId);
+    if (!req) return;
+    const item = state.cache.inventory.find((i) => i.coach_id === state.me.id && i.name === req.item_name);
+    if (!item || item.quantity < req.quantity) { showToast('Not enough stock to approve this — only ' + (item ? item.quantity : 0) + ' left.'); return; }
+    await sb.from('inventory_items').update({ quantity: item.quantity - req.quantity }).eq('id', item.id);
+    await sb.from('inventory_issues').update({ status: 'issued' }).eq('id', issueId);
+    await Promise.all([fetchInventory(state.me.id), fetchItemRequests(state.me.id)]);
+    render();
+  });
 }
 async function declineRequest(issueId) {
   await sb.from('inventory_issues').update({ status: 'declined' }).eq('id', issueId);
@@ -1876,12 +2098,14 @@ function screenAuth() {
     '<div class="brand-title" style="font-size:22px;margin-top:8px">Range Ledger</div></div>' +
     '<div class="auth-card">' +
     '<div class="auth-tabs"><div class="auth-tab ' + (tab === 'signin' ? 'active' : '') + '" onclick="setAuthTab(\'signin\')">Sign in</div><div class="auth-tab ' + (tab === 'signup' ? 'active' : '') + '" onclick="setAuthTab(\'signup\')">Sign up</div></div>' +
-    (tab === 'signin' ? screenSignIn() : screenSignUp()) + '</div></div>';
+    (tab === 'signin' ? screenSignIn() : screenSignUp()) + '</div>' +
+    '<div style="text-align:center;margin-top:14px"><a href="#" onclick="togglePrivacyNotice();return false" style="font-size:10.5px;color:var(--paper-dim);text-decoration:underline">Privacy &amp; data notice</a></div>' +
+    '</div>';
 }
 function screenSignIn() {
   const f = state.signinForm;
-  return '<label class="field-label" style="margin-top:0">Email</label><input id="siEmail" class="text-input" type="email" placeholder="you@example.com" value="' + escapeAttr(f.email) + '" oninput="updateSigninField(\'email\', this.value)" onkeydown="submitOnEnter(event, submitSignIn)"/>' +
-    '<label class="field-label">Password</label><div class="password-wrap"><input id="siPassword" class="text-input" type="password" placeholder="••••••••" value="' + escapeAttr(f.password) + '" oninput="updateSigninField(\'password\', this.value)" onkeydown="submitOnEnter(event, submitSignIn)"/>' +
+  return '<label class="field-label" style="margin-top:0">Email</label><input id="siEmail" class="text-input" type="email" autocomplete="email" placeholder="you@example.com" value="' + escapeAttr(f.email) + '" oninput="updateSigninField(\'email\', this.value)" onkeydown="submitOnEnter(event, submitSignIn)"/>' +
+    '<label class="field-label">Password</label><div class="password-wrap"><input id="siPassword" class="text-input" type="password" autocomplete="current-password" placeholder="••••••••" value="' + escapeAttr(f.password) + '" oninput="updateSigninField(\'password\', this.value)" onkeydown="submitOnEnter(event, submitSignIn)"/>' +
     '<button type="button" id="siPasswordToggle" class="password-toggle-btn" onclick="togglePasswordVisibility(\'siPassword\',\'siPasswordToggle\')">' + icon('eye', 15) + '</button></div>' +
     '<button class="btn-brass" style="margin-top:14px" onclick="submitSignIn()" ' + (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Signing in…' : 'Sign in') + '</button>';
 }
@@ -1905,11 +2129,11 @@ function screenSignUp() {
   return '<label class="field-label" style="margin-top:0">I am a…</label>' +
     '<select id="suRole" class="text-input" onchange="state.suRole=this.value;render()"><option value="student"' + (role === 'student' ? ' selected' : '') + '>Shooter</option><option value="coach"' + (role === 'coach' ? ' selected' : '') + '>Coach</option><option value="admin"' + (role === 'admin' ? ' selected' : '') + '>Admin</option></select>' +
     '<label class="field-label">Full name</label><input id="suName" class="text-input" placeholder="e.g. Rohan Mehta" value="' + escapeAttr(f.name) + '" oninput="updateSignupField(\'name\', this.value)"/>' +
-    '<label class="field-label">Email</label><input id="suEmail" class="text-input" type="email" placeholder="you@example.com" value="' + escapeAttr(f.email) + '" oninput="updateSignupField(\'email\', this.value)"/>' +
-    '<label class="field-label">Password</label><div class="password-wrap"><input id="suPassword" class="text-input" type="password" placeholder="At least 6 characters" value="' + escapeAttr(f.password) + '" oninput="updateSignupField(\'password\', this.value)"/>' +
+    '<label class="field-label">Email</label><input id="suEmail" class="text-input" type="email" autocomplete="email" placeholder="you@example.com" value="' + escapeAttr(f.email) + '" oninput="updateSignupField(\'email\', this.value)"/>' +
+    '<label class="field-label">Password</label><div class="password-wrap"><input id="suPassword" class="text-input" type="password" autocomplete="new-password" placeholder="At least 6 characters" value="' + escapeAttr(f.password) + '" oninput="updateSignupField(\'password\', this.value)"/>' +
     '<button type="button" id="suPasswordToggle" class="password-toggle-btn" onclick="togglePasswordVisibility(\'suPassword\',\'suPasswordToggle\')">' + icon('eye', 15) + '</button></div>' +
     (role === 'student' ? (
-      '<label class="field-label">Mobile number</label><input id="suPhone" class="text-input" type="tel" placeholder="e.g. 98765 43210" value="' + escapeAttr(f.phone) + '" oninput="updateSignupField(\'phone\', this.value)"/>' +
+      '<label class="field-label">Mobile number</label><input id="suPhone" class="text-input" type="tel" autocomplete="tel" placeholder="e.g. 98765 43210" value="' + escapeAttr(f.phone) + '" oninput="updateSignupField(\'phone\', this.value)"/>' +
       '<label class="field-label">Weapon</label><select id="suWeapon" class="text-input" onchange="updateSignupField(\'weapon\', this.value);updateSignupField(\'coachId\', \'\');render()">' +
         '<option' + (f.weapon === 'Air Rifle 10m' ? ' selected' : '') + '>Air Rifle 10m</option>' +
         '<option' + (f.weapon === 'Air Pistol 10m' ? ' selected' : '') + '>Air Pistol 10m</option>' +
@@ -1964,18 +2188,19 @@ function screenSignUp() {
     ) : '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:4px">Admin signup is open here for demo purposes — restrict this in production (e.g. invite-only via the Supabase dashboard).</div>') +
     '<button class="btn-brass" style="margin-top:14px" onclick="submitSignUp()" ' + (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Creating account…' : 'Create account') + '</button>';
 }
-function logoutButton() { return '<button class="icon-btn" onclick="logout()" title="Log out">' + icon('logout', 16) + '</button>'; }
+function logoutButton() { return '<button class="icon-btn" aria-label="Log out" onclick="logout()" title="Log out">' + icon('logout', 16) + '</button>'; }
 
-function accountMenuButton() { return '<button class="icon-btn" onclick="toggleAccountMenu()" title="Account">' + icon('menu', 18) + '</button>'; }
+function accountMenuButton() { return '<button class="icon-btn" aria-label="Account menu" onclick="toggleAccountMenu()" title="Account">' + icon('menu', 18) + '</button>'; }
 function toggleAccountMenu() { state.accountMenuOpen = !state.accountMenuOpen; state.accountForm = null; render(); }
 function toggleAccountForm(which) { state.accountForm = state.accountForm === which ? null : which; render(); }
 function accountMenuPopover() {
   if (!state.accountMenuOpen) return '';
-  return '<div class="popover" style="width:230px"><div class="popover-head"><span class="eyebrow">Account</span><button class="icon-btn small" onclick="toggleAccountMenu()">' + icon('x', 14) + '</button></div>' +
+  return '<div class="popover" style="width:230px"><div class="popover-head"><span class="eyebrow">Account</span><button class="icon-btn small" aria-label="Close menu" onclick="toggleAccountMenu()">' + icon('x', 14) + '</button></div>' +
     '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="toggleAccountForm(\'email\')">Change email</button>' +
     (state.accountForm === 'email' ? accountEmailForm() : '') +
     '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="toggleAccountForm(\'password\')">Change password</button>' +
     (state.accountForm === 'password' ? accountPasswordForm() : '') +
+    '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="togglePrivacyNotice()">Privacy &amp; data notice</button>' +
     '<button class="chip" style="width:100%;text-align:left" onclick="startNewAccount()">+ Create a new account</button>' +
     '</div>';
 }
@@ -2013,7 +2238,13 @@ async function submitPasswordChange() {
   const newPassword = document.getElementById('newPasswordInput').value;
   if (!oldPassword || !newPassword) { showToast('Please fill in both your current and new password.'); return; }
   if (newPassword.length < 6) { showToast('New password must be at least 6 characters.'); return; }
-  const { error } = await sb.auth.updateUser({ password: newPassword, current_password: oldPassword });
+  const currentEmail = (state.session && state.session.user && state.session.user.email) || '';
+  // updateUser() has no "verify the old password" option of its own — signing
+  // in again with it is the actual check. This re-auth reuses the same
+  // session cookie/token store, so it doesn't disturb the active session.
+  const { error: verifyErr } = await sb.auth.signInWithPassword({ email: currentEmail, password: oldPassword });
+  if (verifyErr) { showToast('Your current password is incorrect.'); return; }
+  const { error } = await sb.auth.updateUser({ password: newPassword });
   if (error) { showToast('Could not update password: ' + error.message); return; }
   showToast('Password updated.', 'success');
   state.accountForm = null; state.accountMenuOpen = false; render();
@@ -2061,7 +2292,7 @@ function screenStudentDashboard() {
   const log = (state.cache.myAttendance || []).filter((r) => r.status !== 'PENDING').sort((a, b) => b.id - a.id);
   const myInvoices = state.cache.myInvoices || [];
   return '<div class="app-topbar"><div style="display:flex;align-items:center;gap:8px">' + avatar(student, 36) +
-    '<div><div style="font-weight:600;font-size:13px">' + student.name + '</div><div style="font-size:10px;color:var(--paper-dim)">' + student.category + '</div></div>' + syncStatusBadge() + '</div>' +
+    '<div><div style="font-weight:600;font-size:13px">' + escapeAttr(student.name) + '</div><div style="font-size:10px;color:var(--paper-dim)">' + student.category + ((state.cache.myCoach && state.cache.myCoach.name) || student.coach_name ? ' · Coach: ' + escapeAttr((state.cache.myCoach && state.cache.myCoach.name) || student.coach_name) : '') + '</div></div>' + syncStatusBadge() + '</div>' +
     '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + calendarPopover(student.shooter_category) + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
     '<div class="screen-pad">' + loadErrorBanner() + studentStatsStrip(student, log) + '<div class="dashboard-grid">' +
     '<div class="card span-2" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
@@ -2072,14 +2303,14 @@ function screenStudentDashboard() {
     (student.fee_status === 'PAID' ? '<div style="font-size:12px;color:var(--forest)">✓ Settled for this cycle</div>' :
      (student.fee_status === 'PAYMENT_PENDING' || student.fee_status === 'CASH_PENDING') ? '<div style="font-size:12px;color:var(--brass)">⏳ Waiting for your coach to confirm ' + (student.pending_method || 'this payment') + '</div>' :
      '<button class="btn-brass" onclick="openPayment()">Pay via UPI / Google Pay / Cash</button>') +
-    (myInvoices.length ? '<div style="margin-top:10px;border-top:2px dashed var(--line-strong);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + myInvoices.length + ')</div>' +
+    (myInvoices.length ? '<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + myInvoices.length + ')</div>' +
       '<div style="max-height:150px;overflow-y:auto">' + myInvoices.map((i) => '<div class="log-row" style="padding:5px 0"><span style="cursor:pointer;font-size:11px;flex:1" onclick="viewInvoice(' + i.id + ')">' + i.invoice_number + '</span><span class="mono-sm" style="color:var(--paper-dim);margin-right:6px">' + new Date(i.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</span><button class="icon-btn small" onclick="viewInvoice(' + i.id + ')" title="View / download">' + icon('rupee', 10) + '</button></div>').join('') + '</div></div>' : '') + '</div>' +
     '<div class="card"><div class="eyebrow" style="margin-bottom:10px">Attendance</div>' + ringGauge(student.attendance) +
     '<button class="btn-brass" style="margin-top:12px" onclick="markAttendance()">Mark today\'s attendance</button>' +
     (pending.length ? '<div style="font-size:11px;color:var(--brass);margin-top:8px;text-align:center">⏳ Pending your coach\'s approval</div>' : '') +
     (myOfflineAttendanceActions().length ? '<div style="font-size:11px;color:var(--warning);margin-top:8px;text-align:center">' + icon('clock', 10, 'var(--warning)') + ' Saved offline — will sync automatically</div>' : '') +
     '<div class="logbook" style="margin-top:10px">' + (log.slice(0, 4).map((a) => '<div class="log-row"><span class="mono-sm">' + a.requested_date + '</span><span style="font-size:12px;flex:1">Attendance</span>' + attStamp(a.status) + '</div>').join('') || '<div style="font-size:12px;color:var(--paper-dim)">No attendance marked yet.</div>') + '</div></div>' +
-    '<div class="card span-2"><div class="eyebrow" style="margin-bottom:10px">Match performance</div>' + matchScoreSection(student.id, false) + '</div>' +
+    '<div class="card span-2"><div class="eyebrow" style="margin-bottom:10px">Match performance</div>' + matchScoreSection(student.id, true) + '</div>' +
     qualificationStatusCard(student.id, student.category, false, null) +
     studentInventorySection(state.cache.myCoach) + notificationsInboxCard() + nraiNewsSection() + '</div></div>' +
     (state.paymentOpen ? paymentModal(student) : '') + (state.feeReminderOpen ? feeReminderModal(student) : '') + (state.invoiceOpenId ? invoiceModal(state.invoiceOpenId) : '');
@@ -2087,12 +2318,12 @@ function screenStudentDashboard() {
 
 function pathwayGroup(title, list, color) {
   return '<div style="margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span class="eyebrow" style="font-size:10.5px">' + title + '</span><span class="mono-sm" style="color:' + color + '">' + list.length + '</span></div>' +
-    (list.length ? list.map((s) => '<div class="log-row" style="cursor:pointer;padding:4px 0" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-size:11.5px;flex:1">' + s.name + '</span></div>').join('') : '<div style="font-size:11px;color:var(--paper-dim)">None yet.</div>') + '</div>';
+    (list.length ? list.map((s) => '<div class="log-row" style="cursor:pointer;padding:4px 0" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-size:11.5px;flex:1">' + escapeAttr(s.name) + '</span></div>').join('') : '<div style="font-size:11px;color:var(--paper-dim)">None yet.</div>') + '</div>';
 }
 function studentInventoryRow(item) {
   const open = state.requestFormItemId === item.id;
   return '<div class="log-row" style="align-items:flex-start;flex-wrap:wrap">' +
-    '<div style="flex:1;min-width:120px"><div style="font-weight:600;font-size:12.5px">' + item.name + '</div><div style="font-size:10.5px;color:var(--paper-dim)">₹' + Number(item.unit_price).toLocaleString('en-IN') + ' each</div></div>' +
+    '<div style="flex:1;min-width:120px"><div style="font-weight:600;font-size:12.5px">' + escapeAttr(item.name) + '</div><div style="font-size:10.5px;color:var(--paper-dim)">₹' + Number(item.unit_price).toLocaleString('en-IN') + ' each</div></div>' +
     '<span class="mono-sm">' + item.quantity + ' in stock</span>' +
     '<button class="chip ' + (open ? 'chip-active' : '') + '" style="padding:4px 8px" onclick="toggleRequestForm(' + item.id + ')" ' + (item.quantity <= 0 ? 'disabled' : '') + '>Request</button>' +
     (open ? '<div style="width:100%;margin-top:8px;padding:8px;background:var(--line-soft);border-radius:6px">' +
@@ -2104,7 +2335,7 @@ function studentInventoryRow(item) {
 function myIssueRow(iss) {
   const badgeColor = iss.status === 'requested' ? 'var(--brass)' : iss.status === 'declined' ? 'var(--rust)' : (iss.invoiced ? 'var(--forest)' : 'var(--brass)');
   const label = iss.status === 'requested' ? 'REQUESTED' : iss.status === 'declined' ? 'DECLINED' : (iss.invoiced ? 'BILLED' : 'AWAITING PAYMENT');
-  return '<div class="log-row"><span style="font-size:12px;flex:1">' + iss.item_name + ' × ' + iss.quantity + '</span><span class="stamp" style="--stamp-color:' + badgeColor + '">' + label + '</span></div>';
+  return '<div class="log-row"><span style="font-size:12px;flex:1">' + escapeAttr(iss.item_name) + ' × ' + iss.quantity + '</span><span class="stamp" style="--stamp-color:' + badgeColor + '">' + label + '</span></div>';
 }
 function studentInventorySection(coachMatch) {
   if (!coachMatch) {
@@ -2126,18 +2357,18 @@ function itemRequestsCard(requests) {
     (requests.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim)">No pending requests.</div>' :
       requests.map((r) => {
         const st = state.cache.students.find((s) => s.id === r.student_id);
-        return '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + (st ? st.name : '—') + '</span><span style="font-size:11.5px;color:var(--paper-dim)">' + r.item_name + ' × ' + r.quantity + '</span><button class="chip chip-active" style="padding:4px 8px" onclick="approveRequest(' + r.id + ')">Approve</button><button class="chip" style="padding:4px 8px" onclick="declineRequest(' + r.id + ')">Decline</button></div>';
+        return '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + (st ? escapeAttr(st.name) : '—') + '</span><span style="font-size:11.5px;color:var(--paper-dim)">' + escapeAttr(r.item_name) + ' × ' + r.quantity + '</span><button class="chip chip-active" style="padding:4px 8px" onclick="approveRequest(' + r.id + ')">Approve</button><button class="chip" style="padding:4px 8px" onclick="declineRequest(' + r.id + ')">Decline</button></div>';
       }).join('')) + '</div>';
 }
 function inventoryItemRow(item, myStudents) {
   const issueOpen = state.issueFormItemId === item.id;
   return '<div class="log-row" style="align-items:flex-start;flex-wrap:wrap">' +
-    '<div style="flex:1;min-width:120px"><div style="font-weight:600;font-size:12.5px">' + item.name + '</div><div style="font-size:10.5px;color:var(--paper-dim)">₹' + Number(item.unit_price).toLocaleString('en-IN') + ' each</div></div>' +
+    '<div style="flex:1;min-width:120px"><div style="font-weight:600;font-size:12.5px">' + escapeAttr(item.name) + '</div><div style="font-size:10.5px;color:var(--paper-dim)">₹' + Number(item.unit_price).toLocaleString('en-IN') + ' each</div></div>' +
     '<span class="mono-sm">' + item.quantity + ' in stock</span>' +
     '<button class="chip ' + (issueOpen ? 'chip-active' : '') + '" style="padding:4px 8px" onclick="toggleIssueForm(' + item.id + ')" ' + (item.quantity <= 0 ? 'disabled' : '') + '>Give to student</button>' +
     (issueOpen ? '<div style="width:100%;margin-top:8px;padding:8px;background:var(--line-soft);border-radius:6px">' +
       '<select id="issueStudentSelect_' + item.id + '" class="text-input" style="margin-bottom:6px">' +
-        '<option value="">Choose a shooter…</option>' + myStudents.map((s) => '<option value="' + s.id + '">' + s.name + '</option>').join('') +
+        '<option value="">Choose a shooter…</option>' + myStudents.map((s) => '<option value="' + s.id + '">' + escapeAttr(s.name) + '</option>').join('') +
       '</select>' +
       '<input id="issueQty_' + item.id + '" class="text-input" type="number" min="1" max="' + item.quantity + '" placeholder="Quantity" style="margin-bottom:8px"/>' +
       '<button class="btn-brass" onclick="submitIssueItem(' + item.id + ')">Issue item</button>' +
@@ -2161,7 +2392,7 @@ function screenCoachDashboard() {
       pendingReqs.map((r) => {
         const st = state.cache.students.find((s) => s.id === r.student_id);
         const queued = isQueuedForSync(r.id);
-        return '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + (st ? st.name : '—') + '</span><span class="mono-sm" style="color:var(--paper-dim)">' + r.requested_date + '</span>' +
+        return '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + (st ? escapeAttr(st.name) : '—') + '</span><span class="mono-sm" style="color:var(--paper-dim)">' + r.requested_date + '</span>' +
           (queued
             ? '<span class="queued-tag">' + icon('clock', 10, 'var(--warning)') + ' Queued</span>'
             : '<button class="chip chip-active" style="padding:4px 8px" onclick="approveAttendance(' + r.id + ', true)">Approve</button><button class="chip" style="padding:4px 8px" onclick="approveAttendance(' + r.id + ', false)">Reject</button>') +
@@ -2169,7 +2400,7 @@ function screenCoachDashboard() {
       }).join('')) + '</div>' +
     '<div class="card" style="' + (dueOrOverdue.length ? 'border-color:var(--rust)' : '') + '"><div class="eyebrow" style="margin-bottom:10px">Your shooters — due or overdue</div>' +
     (dueOrOverdue.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim)">All caught up.</div>' :
-      dueOrOverdue.map((s) => '<div class="log-row" style="cursor:pointer" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-weight:600;font-size:12px;flex:1">' + s.name + '</span><span class="mono-sm">Due ' + s.due_date + '</span>' + stamp(s.fee_status, s.pending_method) + '<button class="icon-btn small" style="background:#25D366;border-color:#25D366;color:#fff" onclick="event.stopPropagation();sendWhatsAppReminder(state.cache.students.find(x=>x.id===\'' + s.id + '\'))" title="Send WhatsApp reminder">' + icon('bell', 11) + '</button></div>').join('')) + '</div>' +
+      dueOrOverdue.map((s) => '<div class="log-row" style="cursor:pointer" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-weight:600;font-size:12px;flex:1">' + escapeAttr(s.name) + '</span><span class="mono-sm">Due ' + s.due_date + '</span>' + stamp(s.fee_status, s.pending_method) + '<button class="icon-btn small" style="background:#25D366;border-color:#25D366;color:#fff" onclick="event.stopPropagation();sendWhatsAppReminder(state.cache.students.find(x=>x.id===\'' + s.id + '\'))" title="Send WhatsApp reminder">' + icon('bell', 11) + '</button></div>').join('')) + '</div>' +
     '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">Shooter pathway (' + myStudents.length + ' students)</span></div><div class="card">' +
       pathwayGroup('National Qualified', nationalQualified, 'var(--forest)') + pathwayGroup('ISSF — did not qualify Nationals yet', issfNotQualified, 'var(--brass)') + pathwayGroup('NR — new shooters', nrShooters, 'var(--rust)') + '</div></div>' +
     '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">Item requests</span></div>' + itemRequestsCard(state.cache.itemRequests || []) + '</div>' +
@@ -2177,7 +2408,7 @@ function screenCoachDashboard() {
     '<div class="span-2"><div class="section-head"><span class="eyebrow">Inventory</span></div><div class="card">' +
       (state.cache.inventory.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim);margin-bottom:10px">No items yet — add your first below.</div>' :
         '<div class="logbook" style="margin-bottom:12px">' + state.cache.inventory.map((i) => inventoryItemRow(i, myStudents)).join('') + '</div>') +
-      '<div style="border-top:2px dashed var(--line-strong);padding-top:10px">' +
+      '<div style="border-top:1px solid var(--line);padding-top:10px">' +
         '<div class="eyebrow" style="margin-bottom:6px">Add stock</div>' +
         '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:6px">If an item with this name already exists, the quantity is added to it.</div>' +
         '<input id="invItemName" class="text-input" placeholder="e.g. Match Grade Pellets (0.177, 500 pcs)" style="margin-bottom:6px"/>' +
@@ -2187,7 +2418,7 @@ function screenCoachDashboard() {
       '</div></div></div>' +
     '<div class="span-2"><div class="section-head"><span class="eyebrow">Your roster</span></div>' +
     '<div class="card" style="padding:0;overflow:hidden"><table class="ledger"><thead><tr><th>Shooter</th><th>Attendance</th><th>Fee</th></tr></thead><tbody>' +
-    myStudents.map((s) => '<tr onclick="openAdminDetail(\'' + s.id + '\')"><td><div style="font-weight:600">' + s.name + '</div><div style="font-size:10.5px;color:var(--paper-dim)">' + s.batch + '</div></td><td><div class="mini-bar"><div class="mini-bar-fill" style="width:' + s.attendance + '%;background:' + (s.attendance >= 85 ? 'var(--forest)' : s.attendance >= 65 ? 'var(--brass)' : 'var(--rust)') + '"></div></div></td><td>' + stamp(s.fee_status, s.pending_method) + '</td></tr>').join('') +
+    myStudents.map((s) => '<tr onclick="openAdminDetail(\'' + s.id + '\')"><td><div style="font-weight:600">' + escapeAttr(s.name) + '</div><div style="font-size:10.5px;color:var(--paper-dim)">' + escapeAttr(s.batch) + '</div></td><td><div class="mini-bar"><div class="mini-bar-fill" style="width:' + s.attendance + '%;background:' + (s.attendance >= 85 ? 'var(--forest)' : s.attendance >= 65 ? 'var(--brass)' : 'var(--rust)') + '"></div></div></td><td>' + stamp(s.fee_status, s.pending_method) + '</td></tr>').join('') +
     '</tbody></table></div></div></div></div>' + (state.adminDetailId ? studentDetailModal() : '');
 }
 
@@ -2197,8 +2428,8 @@ function studentDetailModal() {
   const invs = state.cache.detailInvoices || [];
   return '<div class="modal-overlay" onclick="closeDetailIfOverlay(event)"><div class="modal-card" style="max-width:340px;text-align:left" onclick="event.stopPropagation()">' +
     '<button class="back-btn" onclick="closeAdminDetail()">' + icon('chevronLeft', 14) + ' Close</button>' +
-    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' + avatar(s, 46) + '<div><div class="detail-name" style="font-size:15px">' + s.name + '</div><div style="font-size:11px;color:var(--paper-dim)">' + s.category + ' · ' + s.batch + '</div></div></div>' +
-    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:10px;line-height:1.6">' + (s.phone ? '📱 ' + s.phone + '<br/>' : '') + (s.email ? '✉️ ' + s.email + '<br/>' : '') + (s.coach_name ? '🎯 Coach: ' + s.coach_name : '') + '</div>' +
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' + avatar(s, 46) + '<div><div class="detail-name" style="font-size:15px">' + escapeAttr(s.name) + '</div><div style="font-size:11px;color:var(--paper-dim)">' + s.category + ' · ' + escapeAttr(s.batch) + '</div></div></div>' +
+    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:10px;line-height:1.6">' + (s.phone ? '📱 ' + escapeAttr(s.phone) + '<br/>' : '') + (s.email ? '✉️ ' + escapeAttr(s.email) + '<br/>' : '') + (s.coach_name ? '🎯 Coach: ' + escapeAttr(s.coach_name) : '') + '</div>' +
     '<div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + stamp(s.fee_status, s.pending_method) +
     ((s.fee_status === 'CASH_PENDING' || s.fee_status === 'PAYMENT_PENDING') ? '<button class="chip chip-active" onclick="confirmPayment(\'' + s.id + '\')">Confirm ' + (s.pending_method || 'cash') + ' received</button>' : '') +
     (s.shooter_category ? '<span class="chip" style="cursor:default">' + s.shooter_category + ' shooter</span>' : '') +
@@ -2208,9 +2439,14 @@ function studentDetailModal() {
       '<button class="btn-brass" style="flex:1" onclick="generateDueNoticePDF(state.cache.students.find(x=>x.id===\'' + s.id + '\'))">' + icon('rupee', 13) + ' Due notice PDF</button>' +
       '<button class="btn-brass" style="flex:1;background:#25D366" onclick="sendWhatsAppReminder(state.cache.students.find(x=>x.id===\'' + s.id + '\'))">' + icon('bell', 13) + ' WhatsApp</button>' +
       '</div>' : '') +
-    (invs.length ? '<div style="margin-bottom:12px;border-top:2px dashed var(--line-strong);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + invs.length + ')</div>' +
+    (invs.length ? '<div style="margin-bottom:12px;border-top:1px solid var(--line);padding-top:8px"><div class="eyebrow" style="font-size:9.5px;margin-bottom:4px">Payment history (' + invs.length + ')</div>' +
       '<div style="max-height:120px;overflow-y:auto">' + invs.map((i) => '<div class="log-row" style="padding:5px 0"><span style="cursor:pointer;font-size:11px;flex:1" onclick="viewInvoice(' + i.id + ')">' + i.invoice_number + '</span><span class="mono-sm" style="color:var(--paper-dim)">' + new Date(i.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</span></div>').join('') + '</div></div>' : '') +
-    ringGauge(s.attendance, 60) + '<div style="margin-top:14px">' + matchScoreSection(s.id, true) + '</div>' + qualificationStatusCard(s.id, s.category, true, s) + '</div></div>' +
+    ringGauge(s.attendance, 60) + '<div style="margin-top:14px">' + matchScoreSection(s.id, true) + '</div>' + qualificationStatusCard(s.id, s.category, true, s) +
+    '<div class="card span-2"><div class="eyebrow" style="margin-bottom:8px">Coach evaluation</div>' +
+    '<div style="font-size:10px;color:var(--paper-dim);margin-bottom:8px">Shown on this shooter\'s progress report when saved.</div>' +
+    '<textarea id="coachEvalInput_' + s.id + '" class="text-input" rows="3" placeholder="e.g. Strong stability during hold time and consistent trigger follow-through.">' + escapeAttr(s.coach_evaluation || '') + '</textarea>' +
+    '<button class="chip" style="margin-top:8px" onclick="saveCoachEvaluation(\'' + s.id + '\')">Save evaluation</button>' +
+    '</div></div></div>' +
     (state.invoiceOpenId ? invoiceModal(state.invoiceOpenId) : '');
 }
 
@@ -2239,8 +2475,8 @@ function qualificationAdminSection() {
   return '<div class="span-2"><div class="section-head"><span class="eyebrow">Qualification standards</span></div><div class="card">' +
     '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:10px">Example benchmarks — verify against your federation\'s actual current published standards before relying on these for real qualification decisions.</div>' +
     (standards.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim);margin-bottom:12px">No standards set yet.</div>' :
-      '<div class="logbook" style="margin-bottom:12px">' + standards.map((s) => '<div class="log-row"><span style="font-size:12px;flex:1">' + s.category + ' · ' + s.shots + 'sh (' + (s.mode === 'decimal' ? '10.9' : '10.0') + ')</span><span style="font-size:11.5px;color:var(--paper-dim);margin-right:8px">' + s.tier + '</span><span class="mono-sm">' + Number(s.cutoff_score).toFixed(1) + '</span><button class="icon-btn small" title="Delete" onclick="deleteQualificationStandard(' + s.id + ')">' + icon('x', 10) + '</button></div>').join('') + '</div>') +
-    '<div style="border-top:2px dashed var(--line-strong);padding-top:10px">' +
+      '<div class="logbook" style="margin-bottom:12px">' + standards.map((s) => '<div class="log-row"><span style="font-size:12px;flex:1">' + s.category + ' · ' + s.shots + 'sh (' + (s.mode === 'decimal' ? '10.9' : '10.0') + ')</span><span style="font-size:11.5px;color:var(--paper-dim);margin-right:8px">' + s.tier + '</span><span class="mono-sm">' + Number(s.cutoff_score).toFixed(1) + '</span><button class="icon-btn small" title="Delete" onclick="askConfirm(\'Delete this qualification standard?\', \'deleteQualificationStandard\', [' + s.id + '])">' + icon('x', 10) + '</button></div>').join('') + '</div>') +
+    '<div style="border-top:1px solid var(--line);padding-top:10px">' +
     '<label class="field-label" style="margin-top:0">Category</label><select id="qsCategory" class="text-input"><option>Air Rifle 10m</option><option>Air Pistol 10m</option></select>' +
     '<label class="field-label">Shots</label><select id="qsShots" class="text-input">' + MATCH_TYPES.map((t) => '<option' + (t === '60' ? ' selected' : '') + '>' + t + '</option>').join('') + '</select>' +
     '<label class="field-label">Scoring mode</label><select id="qsMode" class="text-input"><option value="decimal">Decimal (10.9/shot)</option><option value="integer">Whole (10.0/shot)</option></select>' +
@@ -2265,19 +2501,19 @@ function screenAdminDashboard() {
     '<div class="dashboard-grid" style="margin:14px 0">' +
     '<div class="card" style="' + (dueOrOverdue.length ? 'border-color:var(--rust)' : '') + '"><div class="eyebrow" style="margin-bottom:8px">All shooters — due or overdue</div>' +
     (dueOrOverdue.length === 0 ? '<div style="font-size:12px;color:var(--paper-dim)">All caught up.</div>' :
-      dueOrOverdue.map((s) => '<div class="log-row" style="cursor:pointer" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-weight:600;font-size:12px;flex:1">' + s.name + '</span><span class="mono-sm">Due ' + s.due_date + '</span>' + stamp(s.fee_status, s.pending_method) + '<button class="icon-btn small" style="background:#25D366;border-color:#25D366;color:#fff" onclick="event.stopPropagation();sendWhatsAppReminder(state.cache.students.find(x=>x.id===\'' + s.id + '\'))" title="Send WhatsApp reminder">' + icon('bell', 11) + '</button></div>').join('')) + '</div>' +
+      dueOrOverdue.map((s) => '<div class="log-row" style="cursor:pointer" onclick="openAdminDetail(\'' + s.id + '\')"><span style="font-weight:600;font-size:12px;flex:1">' + escapeAttr(s.name) + '</span><span class="mono-sm">Due ' + s.due_date + '</span>' + stamp(s.fee_status, s.pending_method) + '<button class="icon-btn small" style="background:#25D366;border-color:#25D366;color:#fff" onclick="event.stopPropagation();sendWhatsAppReminder(state.cache.students.find(x=>x.id===\'' + s.id + '\'))" title="Send WhatsApp reminder">' + icon('bell', 11) + '</button></div>').join('')) + '</div>' +
     '<div class="card"><div class="eyebrow" style="margin-bottom:8px">Coaches</div>' +
-    (state.cache.coaches.length ? state.cache.coaches.map((c) => '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + c.name + '</span><span style="font-size:11px;color:var(--paper-dim)">' + c.specialization + '</span></div>').join('') : '<div style="font-size:12px;color:var(--paper-dim)">No coaches signed up yet.</div>') + '</div>' +
+    (state.cache.coaches.length ? state.cache.coaches.map((c) => '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + escapeAttr(c.name) + '</span><span style="font-size:11px;color:var(--paper-dim)">' + c.specialization + '</span></div>').join('') : '<div style="font-size:12px;color:var(--paper-dim)">No coaches signed up yet.</div>') + '</div>' +
     qualificationAdminSection() +
     notificationHubSection() +
     '<div class="span-2"><div class="section-head" style="margin-top:0"><span class="eyebrow">All shooters</span></div>' +
     '<div class="card" style="padding:0;overflow:hidden"><table class="ledger"><thead><tr><th>Shooter</th><th>Category</th><th>Attend.</th><th>Fee</th></tr></thead><tbody>' +
-    (students.length ? students.map((s) => '<tr onclick="openAdminDetail(\'' + s.id + '\')"><td><div style="font-weight:600">' + s.name + '</div></td><td style="color:' + CATEGORIES[s.category].color + '">' + s.category + '</td><td><div class="mini-bar"><div class="mini-bar-fill" style="width:' + s.attendance + '%;background:' + (s.attendance >= 85 ? 'var(--forest)' : s.attendance >= 65 ? 'var(--brass)' : 'var(--rust)') + '"></div></div></td><td>' + stamp(s.fee_status, s.pending_method) + '</td></tr>').join('') : '<tr><td colspan="4" style="padding:16px;color:var(--paper-dim)">No shooters signed up yet.</td></tr>') +
+    (students.length ? students.map((s) => '<tr onclick="openAdminDetail(\'' + s.id + '\')"><td><div style="font-weight:600">' + escapeAttr(s.name) + '</div></td><td style="color:' + CATEGORIES[s.category].color + '">' + s.category + '</td><td><div class="mini-bar"><div class="mini-bar-fill" style="width:' + s.attendance + '%;background:' + (s.attendance >= 85 ? 'var(--forest)' : s.attendance >= 65 ? 'var(--brass)' : 'var(--rust)') + '"></div></div></td><td>' + stamp(s.fee_status, s.pending_method) + '</td></tr>').join('') : '<tr><td colspan="4" style="padding:16px;color:var(--paper-dim)">No shooters signed up yet.</td></tr>') +
     '</tbody></table></div></div>' +
     '<div class="span-2"><div class="section-head"><span class="eyebrow">All invoices (' + state.cache.invoices.length + ')</span></div>' +
     '<div class="card" style="padding:0;overflow:hidden">' + (state.cache.invoices.length === 0 ? '<div style="padding:16px;font-size:12px;color:var(--paper-dim)">No payments recorded yet.</div>' :
     '<table class="ledger"><thead><tr><th>Invoice</th><th>Shooter</th><th>Amount</th><th>Method</th><th>Date</th></tr></thead><tbody>' +
-    state.cache.invoices.map((i) => '<tr onclick="viewInvoice(' + i.id + ')"><td class="mono-sm">' + i.invoice_number + '</td><td style="font-weight:600">' + i.student_name + '</td><td>₹' + Number(i.amount).toLocaleString('en-IN') + '</td><td style="font-size:10.5px;color:var(--paper-dim)">' + i.method + '</td><td style="font-size:10.5px;color:var(--paper-dim)">' + new Date(i.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</td></tr>').join('') + '</tbody></table>') + '</div></div>' +
+    state.cache.invoices.map((i) => '<tr onclick="viewInvoice(' + i.id + ')"><td class="mono-sm">' + i.invoice_number + '</td><td style="font-weight:600">' + escapeAttr(i.student_name) + '</td><td>₹' + Number(i.amount).toLocaleString('en-IN') + '</td><td style="font-size:10.5px;color:var(--paper-dim)">' + i.method + '</td><td style="font-size:10.5px;color:var(--paper-dim)">' + new Date(i.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</td></tr>').join('') + '</tbody></table>') + '</div></div>' +
     '<div class="span-2"><div class="section-head"><span class="eyebrow">Fee structure</span></div><div class="fee-grid-2">' +
     Object.entries(CATEGORIES).map(([name, meta]) => '<div class="card fee-card">' + icon('target', 15, meta.color) + '<div style="flex:1"><div style="font-weight:600;font-size:12.5px">' + name + '</div><div style="font-size:10.5px;color:var(--paper-dim)">per month</div></div><div class="mono-lg" style="font-size:15px">₹' + meta.fee.toLocaleString('en-IN') + '</div></div>').join('') +
     '</div></div></div></div>' + (state.adminDetailId ? studentDetailModal() : '');
@@ -2298,10 +2534,14 @@ function App() {
     case 'ADMIN_DASHBOARD': screenHtml = screenAdminDashboard(); break;
     default: screenHtml = screenAuth();
   }
-  return toastBanner() + screenHtml;
+  return toastBanner() + confirmDialogModal() + privacyNoticeModal() + allSessionsModal() + screenHtml;
 }
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
 state.syncQueue = loadOfflineQueue();
+setupInactivityMonitor();
 loadFormDraft();
 setupConnectivityListeners();
 render();
