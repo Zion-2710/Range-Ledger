@@ -1,0 +1,217 @@
+-- =============================================================================
+-- Multi-tenant isolation.
+--
+-- Until now, "which academy does this student belong to" was only implied
+-- by matching weapon category text against any coach teaching that weapon —
+-- which means a student (or coach) at one academy could see another
+-- academy's roster, invoices, and scores, since every RLS policy so far
+-- just checked auth.role() = 'authenticated' with no tenant boundary.
+--
+-- This migration adds a real coach_id relationship on students (the actual
+-- source of truth for "which academy"), and rewrites every policy to scope
+-- by it. Two roles are treated as spanning all tenants on purpose: 'admin'
+-- (platform-wide oversight — reconsider this if you want per-academy admins
+-- instead) and shared content like the match reminders calendar, which is
+-- genuinely cross-academy (a State Championship isn't owned by one coach).
+-- =============================================================================
+
+-- The real tenant relationship. coach_name stays as-is for display/history;
+-- coach_id is what authorization now runs on.
+alter table students add column if not exists coach_id uuid references coaches(id);
+
+-- Best-effort backfill for existing rows: match on name + weapon category.
+-- This is a guess for data created before this migration — if a student's
+-- coach_id is still null afterward, they didn't match anything and should
+-- be reassigned manually (e.g. via the Table Editor).
+update students s
+set coach_id = c.id
+from coaches c
+where s.coach_id is null
+  and s.coach_name is not null
+  and lower(trim(s.coach_name)) = lower(trim(c.name))
+  and s.category = c.specialization;
+
+-- A public, minimal directory so a prospective student can pick their real
+-- coach at signup — before they have an account or session. Deliberately
+-- excludes sensitive fields (academy_upi_id, academy_address) that the
+-- full `coaches` table now restricts to tenant members only.
+create or replace view public.coach_directory as
+  select id, name, academy_name, specialization from coaches;
+grant select on public.coach_directory to anon, authenticated;
+
+-- =============================================================================
+-- Helper functions (security definer so they can check role/tenant
+-- membership without getting tangled in the RLS of the tables they query).
+-- =============================================================================
+create or replace function public.is_admin()
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (select 1 from profiles where id = auth.uid() and role = 'admin');
+$$;
+
+-- True if the caller is the student themself, that student's own coach, or
+-- an admin. Reused by every table that has a student_id column, so the
+-- "who can see/touch this student's data" rule is defined in exactly one
+-- place instead of copy-pasted (and potentially drifting) across policies.
+create or replace function public.student_belongs_to_caller(sid uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select
+    exists (
+      select 1 from students s
+      where s.id = sid and (s.id = auth.uid() or s.coach_id = auth.uid())
+    )
+    or public.is_admin();
+$$;
+
+-- Redefine the signup trigger once more to set coach_id (selected from the
+-- coach_directory dropdown) instead of only free-text coach_name.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_role text := new.raw_user_meta_data->>'role';
+  v_coach_id uuid;
+begin
+  insert into public.profiles (id, role, name)
+  values (new.id, coalesce(v_role, 'student'), coalesce(new.raw_user_meta_data->>'name', ''))
+  on conflict (id) do nothing;
+
+  if v_role = 'student' then
+    begin
+      v_coach_id := nullif(new.raw_user_meta_data->>'coach_id', '')::uuid;
+    exception when others then
+      v_coach_id := null;
+    end;
+
+    insert into public.students (id, name, phone, email, category, shooter_category, coach_name, coach_id, national_qualified, nrai_shooter_id)
+    values (
+      new.id,
+      coalesce(new.raw_user_meta_data->>'name', ''),
+      new.raw_user_meta_data->>'phone',
+      new.email,
+      coalesce(new.raw_user_meta_data->>'category', 'Air Rifle 10m'),
+      coalesce(new.raw_user_meta_data->>'shooter_category', 'ISSF'),
+      new.raw_user_meta_data->>'coach_name',
+      v_coach_id,
+      coalesce((new.raw_user_meta_data->>'national_qualified')::boolean, false),
+      new.raw_user_meta_data->>'nrai_shooter_id'
+    )
+    on conflict (id) do nothing;
+  elsif v_role = 'coach' then
+    insert into public.coaches (id, name, specialization, academy_name, academy_address, lane_reservation, academy_upi_id)
+    values (
+      new.id,
+      coalesce(new.raw_user_meta_data->>'name', ''),
+      coalesce(new.raw_user_meta_data->>'specialization', 'Air Rifle 10m'),
+      new.raw_user_meta_data->>'academy_name',
+      new.raw_user_meta_data->>'academy_address',
+      coalesce((new.raw_user_meta_data->>'lane_reservation')::boolean, false),
+      new.raw_user_meta_data->>'academy_upi_id'
+    )
+    on conflict (id) do nothing;
+  end if;
+
+  return new;
+end;
+$$;
+
+-- =============================================================================
+-- Tenant-scoped RLS. Every "readable/writable by authenticated" policy from
+-- earlier migrations is replaced here.
+-- =============================================================================
+
+drop policy if exists "students readable by authenticated" on students;
+create policy "students readable by tenant" on students for select using (
+  id = auth.uid() or coach_id = auth.uid() or is_admin()
+);
+drop policy if exists "students update own or staff" on students;
+create policy "students update by tenant" on students for update using (
+  id = auth.uid() or coach_id = auth.uid() or is_admin()
+);
+-- insert policy ("students insert own") is unchanged — self-insert at signup.
+
+drop policy if exists "coaches readable by authenticated" on coaches;
+create policy "coaches readable by tenant" on coaches for select using (
+  id = auth.uid() or is_admin()
+  or exists (select 1 from students s where s.coach_id = coaches.id and s.id = auth.uid())
+);
+-- insert policy ("coaches insert own") is unchanged.
+
+drop policy if exists "match_scores readable by authenticated" on match_scores;
+create policy "match_scores readable by tenant" on match_scores for select using (
+  student_belongs_to_caller(student_id)
+);
+drop policy if exists "match_scores insert own student" on match_scores;
+create policy "match_scores insert by tenant" on match_scores for insert with check (
+  student_belongs_to_caller(student_id)
+);
+
+drop policy if exists "attendance readable by authenticated" on attendance_requests;
+create policy "attendance readable by tenant" on attendance_requests for select using (
+  student_belongs_to_caller(student_id)
+);
+-- insert policy ("attendance insert own student") is unchanged — a student
+-- can only ever mark their own attendance.
+drop policy if exists "attendance update by staff" on attendance_requests;
+create policy "attendance update by tenant staff" on attendance_requests for update using (
+  student_belongs_to_caller(student_id)
+);
+
+drop policy if exists "invoices readable by authenticated" on invoices;
+create policy "invoices readable by tenant" on invoices for select using (
+  student_belongs_to_caller(student_id)
+);
+drop policy if exists "invoices insert by authenticated" on invoices;
+create policy "invoices insert by tenant" on invoices for insert with check (
+  student_belongs_to_caller(student_id)
+);
+
+drop policy if exists "inventory readable by authenticated" on inventory_items;
+create policy "inventory readable by tenant" on inventory_items for select using (
+  coach_id = auth.uid() or is_admin()
+  or exists (select 1 from students s where s.coach_id = inventory_items.coach_id and s.id = auth.uid())
+);
+-- insert/update-by-owning-coach policies are unchanged (already coach_id-scoped).
+
+drop policy if exists "issues readable by authenticated" on inventory_issues;
+create policy "issues readable by tenant" on inventory_issues for select using (
+  student_belongs_to_caller(student_id)
+);
+drop policy if exists "issues insert by staff" on inventory_issues;
+create policy "issues insert by tenant staff" on inventory_issues for insert with check (
+  coach_id = auth.uid() or is_admin()
+);
+-- "issues insert by requesting student" (student_id = auth.uid()) is unchanged.
+drop policy if exists "issues update by student or coach" on inventory_issues;
+create policy "issues update by tenant" on inventory_issues for update using (
+  student_belongs_to_caller(student_id)
+);
+
+-- reminders and profiles are intentionally left as-is: reminders are shared
+-- match-calendar content (a State Championship isn't one academy's data),
+-- and profiles only expose name + role, used internally for role checks.
+
+-- =============================================================================
+-- Storage: avatars. Previously any authenticated user could upload to *any*
+-- path in this bucket, including overwriting someone else's photo — these
+-- policies restrict uploads/updates to a path the caller's own uid owns
+-- (the app already uploads to "<user id>/filename", so this matches that
+-- convention without requiring any client-side change).
+-- =============================================================================
+drop policy if exists "authenticated users can upload avatars" on storage.objects;
+drop policy if exists "users can upload own avatar" on storage.objects;
+create policy "users can upload own avatar" on storage.objects for insert with check (
+  bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text
+);
+drop policy if exists "users can update own avatar" on storage.objects;
+create policy "users can update own avatar" on storage.objects for update using (
+  bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text
+);
+-- "avatar images publicly readable" (select) is unchanged — read access
+-- stays public since the photo URLs aren't enumerable without already
+-- knowing them, same as a typical public object-storage bucket.
