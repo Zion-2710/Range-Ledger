@@ -2659,7 +2659,15 @@ function screenAuth() {
 }
 async function signInWithGoogle() {
   if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
-  const { error } = await sb.auth.signInWithOAuth({ provider: 'google' });
+  // Without an explicit redirectTo, Supabase falls back to the site's bare
+  // origin (e.g. https://zion-2710.github.io) — which 404s, since this is a
+  // GitHub Pages *project* site that only serves content under /Range-Ledger/,
+  // not at the domain root. Sending Google back to the exact page we're on
+  // (origin + pathname, dropping any query/hash) keeps the redirect on the
+  // real app path. This exact URL must also be listed under Supabase's
+  // Authentication → URL Configuration → Redirect URLs for this to work.
+  const redirectTo = window.location.origin + window.location.pathname;
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
   if (error) { showToast('Google sign-in isn\'t set up on this project yet: ' + error.message + ' (an admin needs to enable the Google provider in Supabase Auth settings first).'); }
 }
 function screenSignIn() {
