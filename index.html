@@ -523,7 +523,15 @@ function syncTurnstileWidget() {
       theme: 'dark',
       callback: (token) => { state.captchaToken = token; },
       'expired-callback': () => { state.captchaToken = null; },
-      'error-callback': () => { state.captchaToken = null; },
+      // TEMP DIAGNOSTIC: surface Cloudflare's actual error code instead of
+      // swallowing it, so a real failure can be pinned down instead of
+      // guessed at. Remove this callback body (back to just clearing the
+      // token) once the underlying cause is confirmed and fixed.
+      'error-callback': (code) => {
+        state.captchaToken = null;
+        console.error('Turnstile error-callback fired with code:', code);
+        showToast('CAPTCHA widget error code: ' + code + ' (reported for diagnosis — screenshot or copy this).', 'error');
+      },
     });
   }
 }
