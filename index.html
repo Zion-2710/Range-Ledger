@@ -428,6 +428,15 @@ function eligibilityInfo(type, cat) {
   return rules[type] || { ok: 'cond', note: 'Check the NRAI Match Book for this event\'s entry rules' };
 }
 function formatDate(iso) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+// Local (not UTC) calendar day as YYYY-MM-DD — new Date().toISOString() reads
+// the UTC day, which disagrees with local "today" for part of the day in
+// every timezone with a non-zero offset, so every "what day is it" check in
+// this app goes through this instead.
+function localIsoDate(date) {
+  const d = date || new Date();
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
 function daysUntil(iso) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const target = new Date(iso + 'T00:00:00');
@@ -1190,15 +1199,15 @@ async function submitSignUp() {
     if (!academyName) { showToast('Please enter your academy\'s name.'); return; }
   }
 
+  if (TURNSTILE_SITE_KEY && !state.captchaToken) { showToast('Please complete the verification check in the corner, then try again.'); return; }
   setBusy(true); render();
   // These extra fields ride along as auth metadata, so the database trigger
   // (see migration 20260101000001) can create the profiles/students/coaches
   // row immediately — even if your project requires email confirmation and
   // there's no active session yet to run a normal insert with.
-  if (TURNSTILE_SITE_KEY && !state.captchaToken) { showToast('Please complete the verification check in the corner, then try again.'); return; }
   const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
     email, password,
-    options: { data: { role, name, phone, category, shooter_category: shooterCategory, coach_id: coachId, coach_name: coachName, national_qualified: nationalQualified, nrai_shooter_id: shooterId, nrai_email: nraiEmail, specialization, specializations: JSON.stringify(specializationsCore), teaching_disciplines: JSON.stringify(teachingDisciplines), academy_name: role === 'student' ? shooterAcademyName : academyName, academy_address: academyAddress, lane_reservation: laneReservation, academy_upi_id: upiId, academy_gstin: gstin, gst_percent: gstPercent, is_minor: f.isMinor, parent_guardian_name: f.isMinor ? f.parentName.trim() : '', parent_guardian_contact: f.isMinor ? f.parentContact.trim() : '' }, captchaToken: state.captchaToken || undefined },
+    options: { data: { role, join_mode: (role === 'coach' && f.coachJoinMode === 'join') ? 'join' : undefined, name, phone, category, shooter_category: shooterCategory, coach_id: coachId, coach_name: coachName, national_qualified: nationalQualified, nrai_shooter_id: shooterId, nrai_email: nraiEmail, specialization, specializations: JSON.stringify(specializationsCore), teaching_disciplines: JSON.stringify(teachingDisciplines), academy_name: role === 'student' ? shooterAcademyName : academyName, academy_address: academyAddress, lane_reservation: laneReservation, academy_upi_id: upiId, academy_gstin: gstin, gst_percent: gstPercent, is_minor: f.isMinor, parent_guardian_name: f.isMinor ? f.parentName.trim() : '', parent_guardian_contact: f.isMinor ? f.parentContact.trim() : '' }, captchaToken: state.captchaToken || undefined },
   });
   resetTurnstile();
   if (signUpErr) {
@@ -1219,6 +1228,22 @@ async function submitSignUp() {
     return;
   }
 
+  // Joining an existing academy: the trigger deliberately skipped creating a
+  // coaches row for this user (see migration 20260101000017/20), so their
+  // actual academy_staff membership only happens here, now that they have a
+  // session to redeem the code under.
+  if (role === 'coach' && f.coachJoinMode === 'join') {
+    const { error: redeemErr } = await sb.rpc('redeem_academy_invite_code', { p_code: f.inviteCode.trim(), p_name: name });
+    if (redeemErr) {
+      setBusy(false); render();
+      showToast('Account created, but joining that academy failed: ' + redeemErr.message + ' — ask the academy owner to check the code, or generate a new one.');
+      state.session = signUpData.session;
+      state.profile = { id: user.id, role, name };
+      await routeAfterAuth();
+      return;
+    }
+  }
+
   // Photo upload needs an active session, so it only happens here (not in
   // the trigger). The row itself was already created by the trigger — this
   // just fills in the photo afterward.
@@ -1233,6 +1258,12 @@ async function submitSignUp() {
       if (photoErr) showToast('Account created, but saving the photo failed: ' + photoErr.message);
     }
   }
+  // The signup form (the only place that reads this preview) won't be
+  // rendered again after routeAfterAuth() below — release it here rather
+  // than leaking the blob URL for the rest of the tab's lifetime.
+  if (state.pendingPhotoPreviewUrl) URL.revokeObjectURL(state.pendingPhotoPreviewUrl);
+  state.pendingPhotoFile = null;
+  state.pendingPhotoPreviewUrl = null;
 
   state.session = signUpData.session;
   state.profile = { id: user.id, role, name };
@@ -1556,7 +1587,11 @@ function academyStaffSection() {
     (codes.length ? '<div class="logbook" style="margin-top:10px">' + codes.map((c) => '<div class="log-row"><span class="mono-sm" style="font-size:13px;flex:1">' + c.code + '</span><span class="chip" style="cursor:default">' + c.role + '</span><button class="icon-btn small" title="Revoke" onclick="askConfirm(\'Revoke this unused invite code?\', \'revokeInviteCode\', [' + c.id + '])">' + icon('x', 10) + '</button></div>').join('') + '</div>' : '') +
     '</div></div></div>';
 }
-async function fetchMyIssues(studentId) { const { data } = await sb.from('inventory_issues').select('*').eq('student_id', studentId).order('created_at', { ascending: false }); state.cache.myIssues = data || []; }
+async function fetchMyIssues(studentId) { const { data } = await sb.from('inventory_issues').select('*').eq('student_id', studentId).order('issued_at', { ascending: false }); state.cache.myIssues = data || []; }
+// Pending item requests awaiting this coach's approve/decline — inventory_issues
+// has no separate "requests" table, just a status column (see migration
+// 20260101000005): 'requested' is a student-initiated ask still pending.
+async function fetchItemRequests(coachId) { const { data } = await sb.from('inventory_issues').select('*').eq('coach_id', coachId).eq('status', 'requested').order('issued_at', { ascending: false }); state.cache.itemRequests = data || []; }
 async function fetchMyCoach(coachId) {
   if (!coachId) return null;
   const { data } = await sb.from('coaches').select('*').eq('id', coachId).maybeSingle();
@@ -1899,7 +1934,7 @@ function monthCalendar() {
     const d = new Date(r.date + 'T00:00:00');
     if (d.getFullYear() === year && d.getMonth() === month) { remindersByDay[d.getDate()] = remindersByDay[d.getDate()] || []; remindersByDay[d.getDate()].push(r); }
   });
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = localIsoDate();
   let cells = '';
   for (let i = 0; i < startWeekday; i++) cells += '<div class="cal-cell empty">·</div>';
   for (let day = 1; day <= daysInMonth; day++) {
@@ -2037,8 +2072,9 @@ async function confirmPayment(studentId) {
   return withActionLock('confirmPayment-' + studentId, async () => {
     const student = state.cache.students.find((s) => s.id === studentId);
     const method = (student && student.pending_method) || 'Cash';
-    const nextDueOn = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const nextDueDisplay = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    const nextDue = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const nextDueOn = localIsoDate(nextDue);
+    const nextDueDisplay = nextDue.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
     await sb.from('students').update({ fee_status: 'PAID', pending_method: null, next_due_on: nextDueOn, due_date: nextDueDisplay }).eq('id', studentId);
     if (student) { student.fee_status = 'PAID'; student.pending_method = null; student.next_due_on = nextDueOn; student.due_date = nextDueDisplay; }
     if (student) await generateInvoice(student, method);
@@ -2928,7 +2964,13 @@ async function submitPasswordChange() {
   const newPassword = document.getElementById('newPasswordInput').value;
   if (!oldPassword || !newPassword) { showToast('Please fill in both your current and new password.'); return; }
   if (newPassword.length < 6) { showToast('New password must be at least 6 characters.'); return; }
-  const { error } = await sb.auth.updateUser({ password: newPassword, current_password: oldPassword });
+  const currentEmail = (state.session && state.session.user && state.session.user.email) || '';
+  // updateUser() has no "verify the old password" option of its own — signing
+  // in again with it is the actual check. This re-auth reuses the same
+  // session cookie/token store, so it doesn't disturb the active session.
+  const { error: verifyErr } = await sb.auth.signInWithPassword({ email: currentEmail, password: oldPassword });
+  if (verifyErr) { showToast('Your current password is incorrect.'); return; }
+  const { error } = await sb.auth.updateUser({ password: newPassword });
   if (error) { showToast('Could not update password: ' + error.message); return; }
   showToast('Password updated.', 'success');
   state.accountForm = null; state.accountMenuOpen = false; render();
@@ -3192,7 +3234,7 @@ function itemRequestsCard(requests) {
     (requests.length === 0 ? '<div style="font-size:12.5px;color:var(--paper-dim)">No pending requests.</div>' :
       requests.map((r) => {
         const st = state.cache.students.find((s) => s.id === r.student_id);
-        return '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + (st ? st.name : '—') + '</span><span style="font-size:12px;color:var(--paper-dim)">' + escapeAttr(r.item_name) + ' × ' + r.quantity + '</span>' + (canEdit() ? '<button class="chip chip-active" style="padding:4px 8px" onclick="approveRequest(' + r.id + ')">Approve</button><button class="chip" style="padding:4px 8px" onclick="declineRequest(' + r.id + ')">Decline</button>' : '<span class="chip" style="cursor:default">View only</span>') + '</div>';
+        return '<div class="log-row"><span style="font-weight:600;font-size:12px;flex:1">' + (st ? escapeAttr(st.name) : '—') + '</span><span style="font-size:12px;color:var(--paper-dim)">' + escapeAttr(r.item_name) + ' × ' + r.quantity + '</span>' + (canEdit() ? '<button class="chip chip-active" style="padding:4px 8px" onclick="approveRequest(' + r.id + ')">Approve</button><button class="chip" style="padding:4px 8px" onclick="declineRequest(' + r.id + ')">Decline</button>' : '<span class="chip" style="cursor:default">View only</span>') + '</div>';
       }).join('')) + '</div>';
 }
 function inventoryItemRow(item, myStudents) {
@@ -3281,7 +3323,7 @@ function studentDetailModal() {
   return '<div class="modal-overlay" onclick="closeDetailIfOverlay(event)"><div class="modal-card" style="max-width:340px;text-align:left" onclick="event.stopPropagation()">' +
     '<button class="back-btn" onclick="closeAdminDetail()">' + icon('chevronLeft', 14) + ' Close</button>' +
     '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' + avatar(s, 46) + '<div><div class="detail-name" style="font-size:15px">' + escapeAttr(s.name) + '</div><div style="font-size:11.5px;color:var(--paper-dim)">' + s.category + ' · ' + escapeAttr(s.batch) + '</div></div></div>' +
-    '<div style="font-size:11.5px;color:var(--paper-dim);margin-bottom:10px;line-height:1.6">' + (s.phone ? '📱 ' + s.phone + '<br/>' : '') + (s.email ? '✉️ ' + s.email + '<br/>' : '') + (s.coach_name ? '🎯 Coach: ' + escapeAttr(s.coach_name) + '<br/>' : '') + (s.academy_name ? '🏛️ ' + escapeAttr(s.academy_name) : '') + '</div>' +
+    '<div style="font-size:11.5px;color:var(--paper-dim);margin-bottom:10px;line-height:1.6">' + (s.phone ? '📱 ' + escapeAttr(s.phone) + '<br/>' : '') + (s.email ? '✉️ ' + escapeAttr(s.email) + '<br/>' : '') + (s.coach_name ? '🎯 Coach: ' + escapeAttr(s.coach_name) + '<br/>' : '') + (s.academy_name ? '🏛️ ' + escapeAttr(s.academy_name) : '') + '</div>' +
     (s.is_minor ? '<div style="font-size:11px;background:var(--line-soft);border-radius:6px;padding:8px;margin-bottom:10px"><b>Minor shooter</b> — Parent/guardian: ' + escapeAttr(s.parent_guardian_name || '—') + (s.parent_guardian_contact ? ' · ' + escapeAttr(s.parent_guardian_contact) : '') + '</div>' : '') +
     '<div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + stamp(s.fee_status, s.pending_method) +
     ((canEdit() && (s.fee_status === 'CASH_PENDING' || s.fee_status === 'PAYMENT_PENDING')) ? '<button class="chip chip-active" onclick="confirmPayment(\'' + s.id + '\')">Confirm ' + (s.pending_method || 'cash') + ' received</button>' : '') +
