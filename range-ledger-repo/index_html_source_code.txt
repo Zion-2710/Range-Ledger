@@ -337,7 +337,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // client-side (unlike the SECRET key, which only ever goes into the
 // Supabase Dashboard, never into this file). Leave as-is and CAPTCHA
 // stays silently disabled; the app works exactly as before either way.
-const TURNSTILE_SITE_KEY = '';
+const TURNSTILE_SITE_KEY = '0x4AAAAAAE5t2F8ndYCwrdNE';
 // Phone/OTP sign-in is fully built and ready to use — but for India,
 // SMS auth also requires separate TRAI DLT registration before any
 // message will actually be delivered (see the setup conversation).
