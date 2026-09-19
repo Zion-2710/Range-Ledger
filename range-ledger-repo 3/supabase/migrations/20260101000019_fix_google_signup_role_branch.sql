@@ -1,0 +1,104 @@
+-- =============================================================================
+-- Fixes a real bug: the trigger defaulted profiles.role to 'student' via
+-- coalesce(v_role, 'student'), but then branched on the RAW (possibly
+-- null) v_role to decide whether to create a students row. For anyone
+-- who signs up without our custom metadata attached — a Google sign-up
+-- being the main case, since Google doesn't carry a "role" field — v_role
+-- is null, so profiles said "student" but no students row was ever
+-- created. That produces exactly the "signed in, but your shooter
+-- profile hasn't been set up correctly" error. This fix branches on the
+-- same coalesced value used for the profile itself, so the two can
+-- never disagree.
+-- =============================================================================
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_role text := new.raw_user_meta_data->>'role';
+  v_effective_role text := coalesce(nullif(new.raw_user_meta_data->>'role', ''), 'student');
+  v_join_mode text := new.raw_user_meta_data->>'join_mode';
+  v_coach_id uuid;
+  v_national_qualified boolean;
+  v_lane_reservation boolean;
+  v_gst_percent numeric;
+  v_specializations text[];
+  v_teaching_disciplines text[];
+begin
+  begin
+    v_coach_id := nullif(new.raw_user_meta_data->>'coach_id', '')::uuid;
+  exception when others then
+    v_coach_id := null;
+  end;
+  begin
+    v_national_qualified := coalesce(nullif(new.raw_user_meta_data->>'national_qualified', '')::boolean, false);
+  exception when others then
+    v_national_qualified := false;
+  end;
+  begin
+    v_lane_reservation := coalesce(nullif(new.raw_user_meta_data->>'lane_reservation', '')::boolean, false);
+  exception when others then
+    v_lane_reservation := false;
+  end;
+  begin
+    v_gst_percent := coalesce(nullif(new.raw_user_meta_data->>'gst_percent', '')::numeric, 0);
+  exception when others then
+    v_gst_percent := 0;
+  end;
+  begin
+    v_specializations := coalesce(array(select jsonb_array_elements_text(nullif(new.raw_user_meta_data->>'specializations', '')::jsonb)), '{}');
+  exception when others then
+    v_specializations := '{}';
+  end;
+  begin
+    v_teaching_disciplines := array(select jsonb_array_elements_text(nullif(new.raw_user_meta_data->>'teaching_disciplines', '')::jsonb));
+  exception when others then
+    v_teaching_disciplines := null;
+  end;
+
+  insert into public.profiles (id, role, name)
+  values (new.id, v_effective_role, coalesce(new.raw_user_meta_data->>'name', ''))
+  on conflict (id) do nothing;
+
+  if v_effective_role = 'student' then
+    insert into public.students (id, name, phone, email, category, shooter_category, coach_name, coach_id, national_qualified, nrai_shooter_id, nrai_email, academy_name)
+    values (
+      new.id, coalesce(new.raw_user_meta_data->>'name', ''), new.raw_user_meta_data->>'phone', new.email,
+      coalesce(nullif(new.raw_user_meta_data->>'category', ''), 'Air Rifle 10m'),
+      coalesce(nullif(new.raw_user_meta_data->>'shooter_category', ''), 'ISSF'),
+      new.raw_user_meta_data->>'coach_name', v_coach_id, v_national_qualified,
+      new.raw_user_meta_data->>'nrai_shooter_id', new.raw_user_meta_data->>'nrai_email', new.raw_user_meta_data->>'academy_name'
+    )
+    on conflict (id) do nothing;
+  elsif v_effective_role = 'coach' and v_join_mode is distinct from 'join' then
+    insert into public.coaches (id, name, specialization, specializations, teaching_disciplines, academy_name, academy_address, lane_reservation, academy_upi_id, academy_gstin, gst_percent)
+    values (
+      new.id, coalesce(new.raw_user_meta_data->>'name', ''),
+      coalesce(nullif(new.raw_user_meta_data->>'specialization', ''), 'Air Rifle 10m'),
+      v_specializations, v_teaching_disciplines,
+      new.raw_user_meta_data->>'academy_name', new.raw_user_meta_data->>'academy_address', v_lane_reservation,
+      new.raw_user_meta_data->>'academy_upi_id', nullif(new.raw_user_meta_data->>'academy_gstin', ''), v_gst_percent
+    )
+    on conflict (id) do nothing;
+  end if;
+
+  return new;
+exception when others then
+  raise warning 'handle_new_user failed: % — %', sqlstate, sqlerrm;
+  return new;
+end;
+$$;
+
+-- Backfill: anyone already stuck in this broken state (a profiles row
+-- saying 'student' with no matching students row) gets a minimal
+-- students row created now, so existing affected accounts recover
+-- without needing to re-signup.
+insert into public.students (id, name, email, category, shooter_category)
+select p.id, coalesce(u.raw_user_meta_data->>'name', ''), u.email, 'Air Rifle 10m', 'ISSF'
+from public.profiles p
+join auth.users u on u.id = p.id
+where p.role = 'student'
+  and not exists (select 1 from public.students s where s.id = p.id)
+on conflict (id) do nothing;
