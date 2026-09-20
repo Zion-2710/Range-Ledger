@@ -194,6 +194,11 @@
   }
   .modal-card { animation: modal-in 0.18s ease; }
   @keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  /* Big, dedicated QR display for 2FA enrollment — deliberately larger than
+     the standard 300px-wide modal-card, so the code is easy to scan straight
+     off the screen instead of squinting at a thumbnail inside a menu. */
+  .mfa-qr-wrap { width: 260px; height: 260px; max-width: 100%; margin: 0 auto 16px; background: #fff; padding: 16px; border-radius: 14px; box-sizing: border-box; }
+  .mfa-qr-wrap svg { width: 100%; height: 100%; display: block; }
   ::selection { background: rgba(47,95,224,0.2); }
   .sync-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 12px; white-space: nowrap; }
   .sync-offline { background: rgba(220,42,59,0.08); color: var(--rust); }
@@ -760,8 +765,13 @@ async function startMfaEnrollment() {
   try {
     const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Authenticator app' });
     if (error) throw error;
+    // data.totp.qr_code is raw <svg>...</svg> markup, not a data: URL or an
+    // image link (Supabase's own docs note this) — mfaEnrollmentModal() drops
+    // it straight into the page rather than wrapping it in <img src="...">,
+    // which would just render a broken image.
     state.mfaEnrollment = { factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret };
     state.accountForm = 'mfa-enroll';
+    state.accountMenuOpen = false;
     render();
   } catch (err) {
     showToast('Could not start setup: ' + (err && err.message ? err.message : 'please try again.'));
@@ -799,16 +809,25 @@ async function disableMfa(factorId) {
     showToast('Could not turn it off: ' + (err && err.message ? err.message : 'please try again.'));
   }
 }
-function mfaEnrollmentForm() {
-  if (!state.mfaEnrollment) return '';
-  return '<div style="margin:2px 0 10px;padding:10px;background:var(--line-soft);border-radius:6px">' +
-    '<div style="font-size:11.5px;color:var(--paper-dim);margin-bottom:8px">Scan this with your authenticator app (Google Authenticator, Authy, etc.):</div>' +
-    '<div style="background:#fff;padding:8px;border-radius:6px;display:flex;justify-content:center;margin-bottom:8px"><img src="' + state.mfaEnrollment.qrCode + '" alt="Scan with your authenticator app" style="width:180px;height:180px"/></div>' +
-    '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:8px">Can\'t scan it? Enter this manually: <span class="mono-sm">' + state.mfaEnrollment.secret + '</span></div>' +
-    '<input id="mfaEnrollCode" class="text-input" inputmode="numeric" maxlength="6" placeholder="Enter the 6-digit code" style="margin-bottom:8px"/>' +
+// A dedicated full-page overlay rather than another item inside the account
+// popover — a QR code and secret need real room to be legible, and stacking
+// this on top of an already-long menu list was the "crowded" problem.
+// state.mfaEnrollment.qrCode is raw SVG markup straight from Supabase (not a
+// data: URL or image link — see the comment in startMfaEnrollment), so it's
+// dropped directly into the page rather than wrapped in an <img src="...">,
+// which would just show a broken image.
+function mfaEnrollmentModal() {
+  if (state.accountForm !== 'mfa-enroll' || !state.mfaEnrollment) return '';
+  return '<div class="modal-overlay" onclick="if(event.target===this) cancelMfaEnrollment()"><div class="modal-card" style="max-width:400px;text-align:center">' +
+    '<div class="detail-name" style="margin-bottom:4px">Set up two-factor authentication</div>' +
+    '<div style="font-size:12.5px;color:var(--paper-dim);margin-bottom:18px">Scan this with your authenticator app — Google Authenticator, Authy, or similar.</div>' +
+    '<div class="mfa-qr-wrap">' + state.mfaEnrollment.qrCode + '</div>' +
+    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:18px">Can\'t scan it? Enter this code manually:<br/><span class="mono-sm" style="font-size:13px">' + escapeAttr(state.mfaEnrollment.secret) + '</span></div>' +
+    '<label class="field-label" style="margin-top:0">6-digit code from the app</label>' +
+    '<input id="mfaEnrollCode" class="text-input" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center;letter-spacing:0.3em;font-size:18px;margin-bottom:12px" onkeydown="submitOnEnter(event, submitMfaEnrollmentVerify)"/>' +
     '<button class="btn-brass" onclick="submitMfaEnrollmentVerify()">Verify &amp; turn on</button>' +
-    '<button class="chip" style="width:100%;justify-content:center;margin-top:6px" onclick="cancelMfaEnrollment()">Cancel</button>' +
-    '</div>';
+    '<button class="chip" style="width:100%;justify-content:center;margin-top:8px" onclick="cancelMfaEnrollment()">Cancel</button>' +
+    '</div></div>';
 }
 function screenStaffPending() {
   return '<div class="splash target-watermark" style="text-align:center"><div class="brand-center">' +
@@ -2941,7 +2960,6 @@ function accountMenuPopover() {
       }
       return '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="startMfaEnrollment()">🛡️ Set up two-factor authentication</button>';
     })() +
-    (state.accountForm === 'mfa-enroll' ? mfaEnrollmentForm() : '') +
     '<button class="chip" style="width:100%;text-align:left" onclick="startNewAccount()">+ Create a new account</button>' +
     '</div>';
 }
@@ -3465,7 +3483,7 @@ function App() {
     case 'ADMIN_DASHBOARD': screenHtml = screenAdminDashboard(); break;
     default: screenHtml = screenAuth();
   }
-  return toastBanner() + confirmDialogModal() + privacyNoticeModal() + allSessionsModal() + screenHtml;
+  return toastBanner() + confirmDialogModal() + privacyNoticeModal() + allSessionsModal() + mfaEnrollmentModal() + screenHtml;
 }
 
 if ('serviceWorker' in navigator) {
