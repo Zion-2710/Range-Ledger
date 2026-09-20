@@ -199,34 +199,20 @@
      off the screen instead of squinting at a thumbnail inside a menu. */
   .mfa-qr-wrap { position: relative; width: 260px; height: 260px; max-width: 100%; margin: 0 auto 16px; background: #fff; padding: 16px; border-radius: 14px; box-sizing: border-box; }
   .mfa-qr-wrap svg, .mfa-qr-wrap img { width: 100%; height: 100%; display: block; object-fit: contain; }
-  /* A perfect ISSF/NRAI decimal score (10.9 is the maximum for a single shot)
-     embedded dead-center of the QR itself — 2FA is the "perfect score" of
-     account security. This is the same trick UPI QR codes use for a bank/app
-     logo: QR error correction tolerates a modest center obstruction (this
-     covers well under 20% of the code's area), so it stays fully scannable —
-     just don't make the whole group bigger than this. Each character is its
-     own square module that snaps into place one after another — 1, then 0,
-     then ., then 9 — the same size and shape as the QR's real modules, so it
-     reads as the code assembling itself rather than text sitting on top of
-     it. Loops forever on a shared 3.2s clock, one fixed offset per digit. */
-  .mfa-qr-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; gap: 2px; box-shadow: 0 0 0 5px #fff; }
+  /* A perfect ISSF/NRAI decimal score (10.9 is the maximum for a single
+     shot) drawn dead-center of the QR using the same dark square modules as
+     the code itself — no white halo, no separate box, no pop-in animation.
+     The same trick real "QR code art" (a smile, a logo) uses: the shape is
+     made of the code's own module language and sits flush against the real
+     modules around it, so the pattern reads as continuous instead of a
+     sticker interrupting it. QR error correction tolerates a modest center
+     obstruction (this covers well under 20% of the code's area) — just
+     don't make the group bigger than this. */
+  .mfa-qr-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; }
   .mfa-qr-digit {
     width: 17px; height: 21px; background: #0f1119; color: #fff;
     font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 12px;
     display: flex; align-items: center; justify-content: center;
-    opacity: 0; transform: scale(0.3);
-    animation: mfa-digit-pop 3.2s ease-in-out infinite;
-  }
-  .mfa-qr-digit:nth-child(1) { animation-delay: 0s; }
-  .mfa-qr-digit:nth-child(2) { animation-delay: 0.3s; }
-  .mfa-qr-digit:nth-child(3) { animation-delay: 0.6s; }
-  .mfa-qr-digit:nth-child(4) { animation-delay: 0.9s; }
-  @keyframes mfa-digit-pop {
-    0%, 3% { opacity: 0; transform: scale(0.3); }
-    10% { opacity: 1; transform: scale(1.25); }
-    16% { transform: scale(1); }
-    80% { opacity: 1; transform: scale(1); }
-    92%, 100% { opacity: 0; transform: scale(0.3); }
   }
   ::selection { background: rgba(47,95,224,0.2); }
   .sync-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 12px; white-space: nowrap; }
@@ -347,7 +333,7 @@
   .ledger-ticker-row { display: flex; align-items: center; gap: 10px; padding: 11px 13px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; font-size: 11.5px; color: var(--paper-secondary); text-align: left; }
   .ledger-ticker-icon { width: 26px; height: 26px; border-radius: 7px; background: rgba(145,132,217,0.16); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   @keyframes ledger-ticker-scroll { from { transform: translateY(0); } to { transform: translateY(-50%); } }
-  @media (prefers-reduced-motion: reduce) { .brand-scene, .shot-dot, .coin, .ledger-line, .id-card, .id-card-photo, .id-line, .id-card-check, .su-pill, .roster-dot, .ledger-ticker-track, .mfa-qr-digit { animation: none !important; } .brand-scene.bs-1 { opacity: 1 !important; } .brand-scene.bs-2, .brand-scene.bs-3 { opacity: 0 !important; } .mfa-qr-digit { opacity: 1 !important; transform: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .brand-scene, .shot-dot, .coin, .ledger-line, .id-card, .id-card-photo, .id-line, .id-card-check, .su-pill, .roster-dot, .ledger-ticker-track { animation: none !important; } .brand-scene.bs-1 { opacity: 1 !important; } .brand-scene.bs-2, .brand-scene.bs-3 { opacity: 0 !important; } }
   @media (min-width: 1040px) {
     /* A definite height tied to the actual viewport ("the frame size of the
        window/page"), not one derived from content — that's what makes
@@ -359,7 +345,14 @@
        fit — the animated panel beside it always exactly fills the card.  */
     .phone.auth-phone { max-width: 1180px; height: 82vh; min-height: 560px; max-height: 860px; }
     .auth-split { display: flex; width: 100%; height: 100%; }
-    .auth-form-col { width: 420px; flex-shrink: 0; padding: 56px 48px; justify-content: center; height: 100%; overflow-y: auto; }
+    /* justify-content: flex-start, not center — a centered flex container
+       that overflows clips its "before start" content symmetrically (unsafe
+       centering per the CSS box-alignment spec), so with center here the
+       scrollable area's top position already sat partway through the form
+       with no way to scroll up to the fields above it. Starting from the
+       top makes the whole form reachable by scrolling down from a true
+       beginning. */
+    .auth-form-col { width: 420px; flex-shrink: 0; padding: 56px 48px; justify-content: flex-start; height: 100%; overflow-y: auto; }
     .auth-brand-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; flex: 1; height: 100%; position: relative; overflow: hidden; background: linear-gradient(135deg, var(--accent-tint-deep) 0%, var(--bg) 70%); padding: 56px; }
     .auth-brand-col::before { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(45deg, rgba(145,132,217,0.08) 0, rgba(145,132,217,0.08) 2px, transparent 2px, transparent 14px); }
     .auth-brand-col > * { position: relative; z-index: 1; }
