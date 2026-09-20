@@ -204,14 +204,29 @@
      account security. This is the same trick UPI QR codes use for a bank/app
      logo: QR error correction tolerates a modest center obstruction (this
      covers well under 20% of the code's area), so it stays fully scannable —
-     just don't make it bigger than this. Styled to read as part of the QR's
-     own square-module language (sharp corners, black on white, monospace)
-     rather than a colored sticker dropped on top of it. */
-  .mfa-qr-badge {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #fff; color: #0f1119; box-shadow: 0 0 0 5px #fff;
-    font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 13px; letter-spacing: 0.01em; line-height: 1;
-    padding: 4px 5px;
+     just don't make the whole group bigger than this. Each character is its
+     own square module that snaps into place one after another — 1, then 0,
+     then ., then 9 — the same size and shape as the QR's real modules, so it
+     reads as the code assembling itself rather than text sitting on top of
+     it. Loops forever on a shared 3.2s clock, one fixed offset per digit. */
+  .mfa-qr-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; gap: 2px; box-shadow: 0 0 0 5px #fff; }
+  .mfa-qr-digit {
+    width: 17px; height: 21px; background: #0f1119; color: #fff;
+    font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transform: scale(0.3);
+    animation: mfa-digit-pop 3.2s ease-in-out infinite;
+  }
+  .mfa-qr-digit:nth-child(1) { animation-delay: 0s; }
+  .mfa-qr-digit:nth-child(2) { animation-delay: 0.3s; }
+  .mfa-qr-digit:nth-child(3) { animation-delay: 0.6s; }
+  .mfa-qr-digit:nth-child(4) { animation-delay: 0.9s; }
+  @keyframes mfa-digit-pop {
+    0%, 3% { opacity: 0; transform: scale(0.3); }
+    10% { opacity: 1; transform: scale(1.25); }
+    16% { transform: scale(1); }
+    80% { opacity: 1; transform: scale(1); }
+    92%, 100% { opacity: 0; transform: scale(0.3); }
   }
   ::selection { background: rgba(47,95,224,0.2); }
   .sync-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 12px; white-space: nowrap; }
@@ -324,18 +339,28 @@
   @keyframes rdin2 { 0%, 76% { opacity: 0; transform: scale(0); } 79% { opacity: 1; transform: scale(1); } 96% { opacity: 1; transform: scale(1); } 99%, 100% { opacity: 0; transform: scale(0); } }
   @keyframes rdin3 { 0%, 81% { opacity: 0; transform: scale(0); } 84% { opacity: 1; transform: scale(1.15); } 87% { transform: scale(1); } 96% { opacity: 1; transform: scale(1); } 99%, 100% { opacity: 0; transform: scale(0); } }
 
-  @media (prefers-reduced-motion: reduce) { .brand-scene, .shot-dot, .coin, .ledger-line, .id-card, .id-card-photo, .id-line, .id-card-check, .su-pill, .roster-dot { animation: none !important; } .brand-scene.bs-1 { opacity: 1 !important; } .brand-scene.bs-2, .brand-scene.bs-3 { opacity: 0 !important; } }
+  /* A quiet, endless "activity feed" filling the space below the headline —
+     motion instead of a static card grid, so the panel keeps feeling alive
+     all the way down instead of stopping cold after the tagline. */
+  .ledger-ticker { position: relative; flex: 1 1 0; min-height: 0; width: 100%; max-width: 420px; margin-top: 32px; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent); }
+  .ledger-ticker-track { display: flex; flex-direction: column; gap: 10px; animation: ledger-ticker-scroll 192s linear infinite; }
+  .ledger-ticker-row { display: flex; align-items: center; gap: 10px; padding: 11px 13px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; font-size: 11.5px; color: var(--paper-secondary); text-align: left; }
+  .ledger-ticker-icon { width: 26px; height: 26px; border-radius: 7px; background: rgba(145,132,217,0.16); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  @keyframes ledger-ticker-scroll { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .brand-scene, .shot-dot, .coin, .ledger-line, .id-card, .id-card-photo, .id-line, .id-card-check, .su-pill, .roster-dot, .ledger-ticker-track, .mfa-qr-digit { animation: none !important; } .brand-scene.bs-1 { opacity: 1 !important; } .brand-scene.bs-2, .brand-scene.bs-3 { opacity: 0 !important; } .mfa-qr-digit { opacity: 1 !important; transform: none !important; } }
   @media (min-width: 1040px) {
-    .phone.auth-phone { max-width: 1180px; min-height: 640px; }
-    .auth-split { display: flex; width: 100%; }
-    .auth-form-col { width: 420px; flex-shrink: 0; padding: 56px 48px; justify-content: center; }
-    /* align-self: flex-start (instead of the flex row's default stretch)
-       stops this column from being forced to match the sign-up form's full
-       height, which can run much taller than one screen — that was pushing
-       the centered animation hundreds of pixels down, off-screen. Sized to
-       min-height:640px (matching .phone's own min-height) and centered
-       within THAT instead, it now always sits near the top, in view. */
-    .auth-brand-col { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex: 1; align-self: flex-start; min-height: 640px; position: relative; overflow: hidden; background: linear-gradient(135deg, var(--accent-tint-deep) 0%, var(--bg) 70%); padding: 56px; }
+    /* A definite height tied to the actual viewport ("the frame size of the
+       window/page"), not one derived from content — that's what makes
+       flex:1 on .ledger-ticker below mean "fill whatever's left" instead of
+       "grow to fit all my rows," which is what was happening when nothing
+       in this chain had a real height to distribute in the first place
+       (both columns were inflating to match the ticker's full, deliberately
+       long, content). The sign-up form scrolls internally if it doesn't
+       fit — the animated panel beside it always exactly fills the card.  */
+    .phone.auth-phone { max-width: 1180px; height: 82vh; min-height: 560px; max-height: 860px; }
+    .auth-split { display: flex; width: 100%; height: 100%; }
+    .auth-form-col { width: 420px; flex-shrink: 0; padding: 56px 48px; justify-content: center; height: 100%; overflow-y: auto; }
+    .auth-brand-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; flex: 1; height: 100%; position: relative; overflow: hidden; background: linear-gradient(135deg, var(--accent-tint-deep) 0%, var(--bg) 70%); padding: 56px; }
     .auth-brand-col::before { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(45deg, rgba(145,132,217,0.08) 0, rgba(145,132,217,0.08) 2px, transparent 2px, transparent 14px); }
     .auth-brand-col > * { position: relative; z-index: 1; }
   }
@@ -931,7 +956,7 @@ function mfaEnrollmentModal() {
   return '<div class="modal-overlay" onclick="if(event.target===this) cancelMfaEnrollment()"><div class="modal-card" style="max-width:400px;text-align:center">' +
     '<div class="detail-name" style="margin-bottom:4px">Set up two-factor authentication</div>' +
     '<div style="font-size:12.5px;color:var(--paper-dim);margin-bottom:18px">Scan this with your authenticator app — Google Authenticator, Authy, or similar.</div>' +
-    '<div class="mfa-qr-wrap">' + mfaQrHtml(state.mfaEnrollment.qrCode) + '<div class="mfa-qr-badge">10.9</div></div>' +
+    '<div class="mfa-qr-wrap">' + mfaQrHtml(state.mfaEnrollment.qrCode) + '<div class="mfa-qr-badge"><span class="mfa-qr-digit">1</span><span class="mfa-qr-digit">0</span><span class="mfa-qr-digit">.</span><span class="mfa-qr-digit">9</span></div></div>' +
     '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:8px">Camera not working, or scanning a QR code on the same screen you\'re reading this on? Open your authenticator app, tap "enter a setup key" (or similar), and type this key in there instead:</div>' +
     '<div style="display:flex;align-items:center;gap:8px;background:var(--line-soft);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:18px">' +
       '<span class="mono-sm" style="font-size:13px;letter-spacing:0.05em;flex:1;text-align:left;word-break:break-all">' + escapeAttr(chunkSecret(state.mfaEnrollment.secret)) + '</span>' +
@@ -2831,19 +2856,33 @@ function screenAuth() {
 // Fills the rest of the side panel below the tagline with what the app
 // actually does — real features, not invented stats — instead of leaving a
 // bare gradient once the animation and headline run out of height to fill.
+// A live-feeling ledger, not a static feature list — small entries drift
+// upward on an endless loop, like the app's own activity feed running
+// quietly beside the form. The row list is rendered twice back-to-back and
+// the track animates exactly -50% so the loop point is invisible.
 function authFeatureStrip() {
-  const feats = [
-    { i: 'calendar', l: 'Attendance & match calendar' },
-    { i: 'rupee', l: 'Fees & UPI-ready invoices' },
-    { i: 'target', l: 'Score logging & progress' },
-    { i: 'check', l: 'Two-factor account security' },
+  const rows = [
+    { i: 'target', l: '10.4 logged — Air Rifle 10m' },
+    { i: 'check', l: 'Attendance marked for today' },
+    { i: 'rupee', l: '₹2,000 received via UPI' },
+    { i: 'calendar', l: 'State Championship added' },
+    { i: 'check', l: 'Two-factor authentication turned on' },
   ];
-  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:32px;max-width:420px">' +
-    feats.map((f) => '<div style="display:flex;align-items:center;gap:9px;padding:11px 12px;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.08);border-radius:10px">' +
-      '<div style="width:28px;height:28px;border-radius:7px;background:rgba(145,132,217,0.16);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon(f.i, 14, 'var(--accent-light)') + '</div>' +
-      '<span style="font-size:11.5px;color:var(--paper-secondary);line-height:1.3;text-align:left">' + f.l + '</span>' +
-      '</div>').join('') +
-    '</div>';
+  const rowHtml = rows.map((r) => '<div class="ledger-ticker-row">' +
+    '<div class="ledger-ticker-icon">' + icon(r.i, 13, 'var(--accent-light)') + '</div>' +
+    '<span>' + r.l + '</span>' +
+    '</div>').join('');
+  // .ledger-ticker is flex:1 — on a long sign-up form (many fields, a tall
+  // window) it can measure over 1700px tall. The seamless loop (translateY
+  // -50%) needs one full copy of the track to already be at least as tall
+  // as the container, or the wrap-around exposes a blank gap at the bottom
+  // once it's scrolled partway. 12 repeats of the 5 rows (~3600px) covers
+  // that with margin even for the longest role's form; two such blocks
+  // back-to-back is what makes
+  // -50% loop invisibly.
+  let block = '';
+  for (let i = 0; i < 12; i++) block += rowHtml;
+  return '<div class="ledger-ticker"><div class="ledger-ticker-track">' + block + block + '</div></div>';
 }
 async function signInWithGoogle() {
   if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
