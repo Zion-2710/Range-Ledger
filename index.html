@@ -197,8 +197,20 @@
   /* Big, dedicated QR display for 2FA enrollment — deliberately larger than
      the standard 300px-wide modal-card, so the code is easy to scan straight
      off the screen instead of squinting at a thumbnail inside a menu. */
-  .mfa-qr-wrap { width: 260px; height: 260px; max-width: 100%; margin: 0 auto 16px; background: #fff; padding: 16px; border-radius: 14px; box-sizing: border-box; }
-  .mfa-qr-wrap svg { width: 100%; height: 100%; display: block; }
+  .mfa-qr-wrap { position: relative; width: 260px; height: 260px; max-width: 100%; margin: 0 auto 16px; background: #fff; padding: 16px; border-radius: 14px; box-sizing: border-box; }
+  .mfa-qr-wrap svg, .mfa-qr-wrap img { width: 100%; height: 100%; display: block; object-fit: contain; }
+  /* A perfect ISSF/NRAI decimal score (10.9 is the maximum for a single shot)
+     stamped on the QR, the same way a target card gets stamped — 2FA is the
+     "perfect score" of account security. Small, tucked in a corner, not a
+     generic gray box. */
+  .mfa-qr-badge {
+    position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; border-radius: 50%;
+    background: var(--brass); color: #fff; border: 3px solid var(--ink);
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    transform: rotate(9deg); box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  }
+  .mfa-qr-badge span:first-child { font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 13px; line-height: 1; }
+  .mfa-qr-badge span:last-child { font-size: 6px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; margin-top: 1px; }
   ::selection { background: rgba(47,95,224,0.2); }
   .sync-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 12px; white-space: nowrap; }
   .sync-offline { background: rgba(220,42,59,0.08); color: var(--rust); }
@@ -229,9 +241,14 @@
   .sidebar-nav-item.active { background: var(--accent-tint); color: var(--paper); }
   .sidebar-nav-item:hover:not(.active) { background: var(--hover-fill); }
   .sidebar-mini-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-  .sidebar-mini-cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; border-radius: 5px; color: var(--paper-dim); font-family: 'IBM Plex Mono', monospace; }
+  .sidebar-mini-cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; border-radius: 5px; color: var(--paper-dim); font-family: 'IBM Plex Mono', monospace; cursor: pointer; transition: background 0.12s ease, color 0.12s ease; }
+  .sidebar-mini-cal-cell:hover { background: var(--hover-fill); color: var(--paper); }
   .sidebar-mini-cal-cell.has-event { background: var(--accent-tint-deep); color: var(--paper); font-weight: 500; }
-  .sidebar-mini-cal-cell.empty { visibility: hidden; }
+  .sidebar-mini-cal-cell.has-event:hover { background: var(--accent-tint-deep); filter: brightness(1.25); }
+  .sidebar-mini-cal-cell.today { border: 1px solid var(--brass); }
+  .sidebar-mini-cal-cell.empty { visibility: hidden; cursor: default; }
+  .sidebar-mini-cal-nav { background: none; border: none; color: var(--paper-dim); cursor: pointer; padding: 2px; display: flex; align-items: center; border-radius: 4px; }
+  .sidebar-mini-cal-nav:hover { color: var(--paper); background: var(--hover-fill); }
 
   .auth-form-col { display: flex; flex-direction: column; justify-content: center; }
   .auth-brand-col { display: none; }
@@ -239,8 +256,10 @@
   .oauth-row .chip { flex: 1; justify-content: center; padding: 10px; }
   /* Three animated scenes taking turns on one shared 15s clock — a
      match series being shot, a fee/payment moment, then the app's own
-     mark — rather than one object spinning in place. */
-  .brand-scene-stage { position: relative; width: 290px; height: 220px; margin-bottom: 32px; }
+     mark — rather than one object spinning in place. Sign-up shows a
+     different three-scene story (see .su-scene below): building a
+     profile, picking a role/discipline, joining the roster. */
+  .brand-scene-stage { position: relative; width: 360px; max-width: 100%; height: 270px; margin-bottom: 32px; }
   .brand-scene { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; }
   .brand-scene.bs-1 { animation: bs1-cycle 15s ease-in-out infinite; }
   .brand-scene.bs-2 { animation: bs2-cycle 15s ease-in-out infinite; }
@@ -266,12 +285,55 @@
   @keyframes ledgerline1 { 0%, 71% { opacity: 0; transform: scaleX(0); } 74% { opacity: 1; transform: scaleX(1); } 96% { opacity: 1; } 99%, 100% { opacity: 0; } }
   @keyframes ledgerline2 { 0%, 76% { opacity: 0; transform: scaleX(0); } 79% { opacity: 1; transform: scaleX(1); } 96% { opacity: 1; } 99%, 100% { opacity: 0; } }
   @keyframes ledgerline3 { 0%, 81% { opacity: 0; transform: scaleX(0); } 84% { opacity: 1; transform: scaleX(1); } 96% { opacity: 1; } 99%, 100% { opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .brand-scene, .shot-dot, .coin, .ledger-line { animation: none !important; } .brand-scene.bs-1 { opacity: 1 !important; } .brand-scene.bs-2, .brand-scene.bs-3 { opacity: 0 !important; } }
+
+  /* Sign-up's own three-scene story — a shooter's real onboarding, not the
+     sign-in one replayed: a profile card being built, then the role/
+     discipline choice, then joining the academy roster. Reuses the same
+     bs-1/bs-2/bs-3 scene-switching timing as sign-in so both feel like one
+     family, with entirely different content inside each. */
+  .id-card { position: relative; width: 210px; height: 128px; border: 2px solid var(--accent-light); border-radius: 14px; opacity: 0; transform: scale(0.88); display: flex; align-items: center; gap: 16px; padding: 18px; animation: idcard-in 15s ease-in-out infinite; }
+  @keyframes idcard-in { 0%, 2% { opacity: 0; transform: scale(0.88); } 4% { opacity: 1; transform: scale(1); } 29% { opacity: 1; transform: scale(1); } 32%, 100% { opacity: 0; } }
+  .id-card-photo { width: 58px; height: 58px; border-radius: 50%; background: var(--accent-tint-deep); border: 2px solid var(--brass); flex-shrink: 0; opacity: 0; transform: scale(0.5); animation: idphoto-in 15s ease-in-out infinite; }
+  @keyframes idphoto-in { 0%, 6% { opacity: 0; transform: scale(0.5); } 9% { opacity: 1; transform: scale(1); } 29% { opacity: 1; transform: scale(1); } 32%, 100% { opacity: 0; transform: scale(0.5); } }
+  .id-card-lines { display: flex; flex-direction: column; gap: 9px; flex: 1; }
+  .id-line { height: 7px; border-radius: 3px; opacity: 0; transform: scaleX(0); transform-origin: left; }
+  .id-line-a { width: 100%; background: var(--paper-secondary); animation: idlinea-in 15s ease-in-out infinite; }
+  .id-line-b { width: 68%; background: var(--accent-tint-deep); animation: idlineb-in 15s ease-in-out infinite; }
+  @keyframes idlinea-in { 0%, 11% { opacity: 0; transform: scaleX(0); } 14% { opacity: 1; transform: scaleX(1); } 29% { opacity: 1; } 32%, 100% { opacity: 0; } }
+  @keyframes idlineb-in { 0%, 15% { opacity: 0; transform: scaleX(0); } 18% { opacity: 1; transform: scaleX(1); } 29% { opacity: 1; } 32%, 100% { opacity: 0; } }
+  .id-card-check { position: absolute; bottom: -11px; right: -11px; width: 32px; height: 32px; border-radius: 50%; background: var(--forest); color: #0f1119; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; opacity: 0; transform: scale(0); animation: idcheck-in 15s ease-in-out infinite; }
+  @keyframes idcheck-in { 0%, 20% { opacity: 0; transform: scale(0); } 23% { opacity: 1; transform: scale(1.25); } 25% { transform: scale(1); } 29% { opacity: 1; transform: scale(1); } 32%, 100% { opacity: 0; transform: scale(0); } }
+
+  .su-pill { padding: 9px 18px; border-radius: 20px; border: 1.5px solid var(--accent-light); font-size: 14px; font-weight: 500; color: var(--paper); opacity: 0; transform: translateY(14px); }
+  .su-pill.filled { background: var(--accent-tint-deep); border-color: var(--brass); }
+  .sp-1 { animation: suin1 15s ease-in-out infinite; }
+  .sp-2 { animation: suin2 15s ease-in-out infinite; }
+  .sp-3 { animation: suin3 15s ease-in-out infinite; }
+  @keyframes suin1 { 0%, 36% { opacity: 0; transform: translateY(14px); } 39% { opacity: 1; transform: translateY(0); } 62% { opacity: 1; transform: translateY(0); } 65%, 100% { opacity: 0; } }
+  @keyframes suin2 { 0%, 41% { opacity: 0; transform: translateY(14px); } 44% { opacity: 1; transform: translateY(0); } 62% { opacity: 1; transform: translateY(0); } 65%, 100% { opacity: 0; } }
+  @keyframes suin3 { 0%, 46% { opacity: 0; transform: translateY(14px); } 49% { opacity: 1; transform: translateY(0); } 62% { opacity: 1; transform: translateY(0); } 65%, 100% { opacity: 0; } }
+
+  .roster-dot { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-tint-deep); border: 2px solid var(--accent-light); opacity: 0; transform: scale(0); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--paper); }
+  .rd-1 { animation: rdin1 15s ease-in-out infinite; }
+  .rd-2 { animation: rdin2 15s ease-in-out infinite; }
+  .rd-3 { animation: rdin3 15s ease-in-out infinite; }
+  .rd-you { background: var(--brass); border-color: var(--accent-pale); font-weight: 700; }
+  @keyframes rdin1 { 0%, 71% { opacity: 0; transform: scale(0); } 74% { opacity: 1; transform: scale(1); } 96% { opacity: 1; transform: scale(1); } 99%, 100% { opacity: 0; transform: scale(0); } }
+  @keyframes rdin2 { 0%, 76% { opacity: 0; transform: scale(0); } 79% { opacity: 1; transform: scale(1); } 96% { opacity: 1; transform: scale(1); } 99%, 100% { opacity: 0; transform: scale(0); } }
+  @keyframes rdin3 { 0%, 81% { opacity: 0; transform: scale(0); } 84% { opacity: 1; transform: scale(1.15); } 87% { transform: scale(1); } 96% { opacity: 1; transform: scale(1); } 99%, 100% { opacity: 0; transform: scale(0); } }
+
+  @media (prefers-reduced-motion: reduce) { .brand-scene, .shot-dot, .coin, .ledger-line, .id-card, .id-card-photo, .id-line, .id-card-check, .su-pill, .roster-dot { animation: none !important; } .brand-scene.bs-1 { opacity: 1 !important; } .brand-scene.bs-2, .brand-scene.bs-3 { opacity: 0 !important; } }
   @media (min-width: 1040px) {
     .phone.auth-phone { max-width: 1180px; min-height: 640px; }
     .auth-split { display: flex; width: 100%; }
     .auth-form-col { width: 420px; flex-shrink: 0; padding: 56px 48px; justify-content: center; }
-    .auth-brand-col { display: flex; flex-direction: column; justify-content: center; flex: 1; position: relative; overflow: hidden; background: linear-gradient(135deg, var(--accent-tint-deep) 0%, var(--bg) 70%); padding: 56px; }
+    /* align-self: flex-start (instead of the flex row's default stretch)
+       stops this column from being forced to match the sign-up form's full
+       height, which can run much taller than one screen — that was pushing
+       the centered animation hundreds of pixels down, off-screen. Sized to
+       min-height:640px (matching .phone's own min-height) and centered
+       within THAT instead, it now always sits near the top, in view. */
+    .auth-brand-col { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex: 1; align-self: flex-start; min-height: 640px; position: relative; overflow: hidden; background: linear-gradient(135deg, var(--accent-tint-deep) 0%, var(--bg) 70%); padding: 56px; }
     .auth-brand-col::before { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(45deg, rgba(145,132,217,0.08) 0, rgba(145,132,217,0.08) 2px, transparent 2px, transparent 14px); }
     .auth-brand-col > * { position: relative; z-index: 1; }
   }
@@ -816,13 +878,39 @@ async function disableMfa(factorId) {
 // data: URL or image link — see the comment in startMfaEnrollment), so it's
 // dropped directly into the page rather than wrapped in an <img src="...">,
 // which would just show a broken image.
+// Supabase has returned this QR code in two different shapes across
+// versions/projects: sometimes bare <svg>...</svg> markup, sometimes a full
+// "data:image/svg+xml;utf-8,<svg>...</svg>" data URL. Dropping the data-URL
+// form straight into the page (as if it were markup) just prints that
+// "data:image/svg+xml;utf-8," prefix as literal text — it needs to go
+// through a real <img src="..."> instead. Handle both so this doesn't
+// silently break again if Supabase's response shape changes.
+function mfaQrHtml(qrCode) {
+  const raw = (qrCode || '').trim();
+  if (raw.slice(0, 5) === 'data:') {
+    // Some Supabase projects hand back this data: URL with its SVG payload
+    // left raw (literal <, >, " characters) instead of percent-encoded —
+    // technically invalid URI syntax that browsers can silently fail to
+    // load as an image. Only re-encode when it's actually raw (a literal
+    // "<" is the tell) — a payload that's already base64 or percent-encoded
+    // must be left alone, or encodeURIComponent would double-encode it.
+    const commaIdx = raw.indexOf(',');
+    let src = raw;
+    if (commaIdx !== -1) {
+      const meta = raw.slice(0, commaIdx), payload = raw.slice(commaIdx + 1);
+      src = payload.indexOf('<') !== -1 ? meta + ',' + encodeURIComponent(payload) : raw;
+    }
+    return '<img src="' + escapeAttr(src) + '" alt="Scan with your authenticator app"/>';
+  }
+  return raw; // bare <svg>...</svg> markup — embed directly so it renders natively
+}
 function mfaEnrollmentModal() {
   if (state.accountForm !== 'mfa-enroll' || !state.mfaEnrollment) return '';
   return '<div class="modal-overlay" onclick="if(event.target===this) cancelMfaEnrollment()"><div class="modal-card" style="max-width:400px;text-align:center">' +
     '<div class="detail-name" style="margin-bottom:4px">Set up two-factor authentication</div>' +
     '<div style="font-size:12.5px;color:var(--paper-dim);margin-bottom:18px">Scan this with your authenticator app — Google Authenticator, Authy, or similar.</div>' +
-    '<div class="mfa-qr-wrap">' + state.mfaEnrollment.qrCode + '</div>' +
-    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:18px">Can\'t scan it? Enter this code manually:<br/><span class="mono-sm" style="font-size:13px">' + escapeAttr(state.mfaEnrollment.secret) + '</span></div>' +
+    '<div class="mfa-qr-wrap">' + mfaQrHtml(state.mfaEnrollment.qrCode) + '<div class="mfa-qr-badge"><span>10.9</span><span>Perfect</span></div></div>' +
+    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:18px">Can\'t scan it? Open your authenticator app, choose "enter a setup key" (or similar), and type this code in there — not on this page:<br/><span class="mono-sm" style="font-size:13px;word-break:break-all">' + escapeAttr(state.mfaEnrollment.secret) + '</span></div>' +
     '<label class="field-label" style="margin-top:0">6-digit code from the app</label>' +
     '<input id="mfaEnrollCode" class="text-input" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center;letter-spacing:0.3em;font-size:18px;margin-bottom:12px" onkeydown="submitOnEnter(event, submitMfaEnrollmentVerify)"/>' +
     '<button class="btn-brass" onclick="submitMfaEnrollmentVerify()">Verify &amp; turn on</button>' +
@@ -1984,11 +2072,19 @@ function addReminderForm() {
     '<label class="field-label">Notes (optional)</label><textarea id="remNotes" class="text-input" placeholder="Anything to remember" style="margin-bottom:8px;min-height:52px;resize:vertical;font-family:inherit"></textarea>' +
     '<button class="btn-brass" onclick="submitReminder()">Save reminder</button></div>';
 }
-function calendarPopover(shooterCategory) {
+// A full modal instead of a popover anchored to the calendar icon button —
+// that button (and the popover positioned relative to it) only exists in
+// the mobile-style topbar markup, which is hidden entirely once the desktop
+// sidebar layout kicks in, so the old popover was unreachable on desktop no
+// matter what triggered it (the icon, or the "Calendar" link on the
+// dashboard). A top-level modal works the same regardless of which button
+// opened it or which layout is active.
+function calendarModal() {
   if (!state.calendarOpen) return '';
+  const shooterCategory = (state.profile && state.profile.role === 'student' && state.me) ? state.me.shooter_category : null;
   const year = state.calendarViewDate.year, month = state.calendarViewDate.month;
   const monthReminders = state.cache.reminders.filter((r) => { const d = new Date(r.date + 'T00:00:00'); return d.getFullYear() === year && d.getMonth() === month; }).sort((a, b) => a.date.localeCompare(b.date));
-  return '<div class="popover cal-popover"><div class="popover-head"><span class="eyebrow">📅 Match calendar</span><button class="icon-btn small" aria-label="Close calendar" onclick="toggleCalendar()">' + icon('x', 14) + '</button></div>' +
+  return '<div class="modal-overlay" onclick="if(event.target===this) toggleCalendar()"><div class="modal-card" style="max-width:380px;max-height:85vh;text-align:left"><div class="popover-head"><span class="eyebrow">📅 Match calendar</span><button class="icon-btn small" aria-label="Close calendar" onclick="toggleCalendar()">' + icon('x', 14) + '</button></div>' +
     monthCalendar() +
     '<div class="cal-legend">' + REMINDER_TYPES.map((t) => '<span class="legend-item"><span class="legend-dot" style="background:' + typeColor(t) + '"></span>' + t + '</span>').join('') + '</div>' +
     (shooterCategory ? '<div style="font-size:10.5px;color:var(--paper-dim);margin-bottom:6px">Eligibility shown for your profile: <b style="color:var(--paper)">' + shooterCategory + ' shooter</b></div>' : '') +
@@ -1999,7 +2095,7 @@ function calendarPopover(shooterCategory) {
     }).join('') : '<div style="font-size:12px;color:var(--paper-dim);padding:4px 0">No reminders this month.</div>') + '</div>' +
     '<button class="chip chip-active" style="width:100%;margin-top:8px;text-align:center" onclick="openAddReminderForDate()">+ Add reminder' + (state.selectedReminderDate ? ' for ' + formatDate(state.selectedReminderDate) : '') + '</button>' +
     (state.addReminderOpen ? addReminderForm() : '') +
-    (shooterCategory ? '<div style="font-size:10px;color:var(--paper-dim);margin-top:8px;padding-top:8px;border-top:2px dashed var(--line-strong);line-height:1.4">Simplified guide based on the NRAI Match Book — confirm current eligibility with your State Association.</div>' : '') + '</div>';
+    (shooterCategory ? '<div style="font-size:10px;color:var(--paper-dim);margin-top:8px;padding-top:8px;border-top:2px dashed var(--line-strong);line-height:1.4">Simplified guide based on the NRAI Match Book — confirm current eligibility with your State Association.</div>' : '') + '</div></div>';
 }
 
 // Fees / payments / invoices
@@ -2622,7 +2718,8 @@ function closeDetailIfOverlay(e) { if (e.target.classList.contains('modal-overla
 // =============================================================================
 // Screens
 // =============================================================================
-function brandSceneStage() {
+function brandSceneStage(mode) {
+  if (mode === 'signup') return signUpSceneStage();
   // Scene 1 — a match series being shot: a target with shots landing
   // one at a time, clustering into a real group near center.
   const targetSvg = '<svg width="155" height="155" viewBox="0 0 155 155"><circle cx="77.5" cy="77.5" r="72" fill="none" stroke="var(--paper-faint)" stroke-width="1.2"/><circle cx="77.5" cy="77.5" r="56" fill="none" stroke="var(--paper-dim)" stroke-width="1.2"/><circle cx="77.5" cy="77.5" r="39" fill="none" stroke="var(--accent-light)" stroke-width="1.4"/><circle cx="77.5" cy="77.5" r="22" fill="none" stroke="var(--brass)" stroke-width="1.6"/><circle cx="77.5" cy="77.5" r="8" fill="none" stroke="var(--accent-pale)" stroke-width="1.2"/></svg>';
@@ -2653,6 +2750,31 @@ function brandSceneStage() {
 
   return '<div class="brand-scene-stage">' + scene1 + scene2 + scene3 + '</div>';
 }
+// Sign-up's own story, on the same 15s three-scene clock as sign-in but
+// telling the actual signup journey instead of replaying the sign-in one:
+// a profile being built, the role/discipline you pick, then joining the
+// roster — each scene mirrors a real step of the form beside it.
+function signUpSceneStage() {
+  const scene1 = '<div class="brand-scene bs-1"><div class="id-card">' +
+    '<div class="id-card-photo"></div>' +
+    '<div class="id-card-lines"><div class="id-line id-line-a"></div><div class="id-line id-line-b"></div></div>' +
+    '<div class="id-card-check">✓</div>' +
+    '</div></div>';
+
+  const scene2 = '<div class="brand-scene bs-2"><div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">' +
+    '<div class="su-pill sp-1 filled">Shooter</div>' +
+    '<div class="su-pill sp-2">Coach</div>' +
+    '<div class="su-pill sp-3 filled">Air Rifle · 10m</div>' +
+    '</div></div>';
+
+  const scene3 = '<div class="brand-scene bs-3"><div style="display:flex;flex-direction:column;align-items:center">' +
+    icon('crosshair', 60, 'var(--brass)') +
+    '<div style="margin-top:16px;display:flex;gap:10px">' +
+    '<div class="roster-dot rd-1">RS</div><div class="roster-dot rd-2">AK</div><div class="roster-dot rd-you rd-3">You</div>' +
+    '</div></div></div>';
+
+  return '<div class="brand-scene-stage">' + scene1 + scene2 + scene3 + '</div>';
+}
 function screenAuth() {
   const tab = state.authTab;
   document.querySelector('.phone').classList.add('auth-phone');
@@ -2669,10 +2791,13 @@ function screenAuth() {
     '<div style="text-align:center;margin-top:18px;font-size:10.5px;color:var(--paper-faint);line-height:1.6">By continuing, you agree to Range Ledger\'s <a href="#" onclick="togglePrivacyNotice();return false" style="color:var(--paper-dim);text-decoration:underline">privacy &amp; data notice</a>.</div>' +
     '</div></div>' +
     '<div class="auth-brand-col">' +
-    brandSceneStage() +
+    brandSceneStage(tab) +
     '<div style="font-size:12px;letter-spacing:0.1em;color:var(--accent-light);text-transform:uppercase;margin-bottom:14px">Shooting Academy · Est. Ledger</div>' +
-    '<div style="font-size:42px;font-weight:500;line-height:1.22;max-width:480px">Every session, every rupee, every shooter — one ledger.</div>' +
-    '<div style="font-size:15px;color:var(--paper-secondary);margin-top:18px;max-width:420px;line-height:1.65">Attendance, scores, fees, and gear for your academy, kept in one place your shooters and coaches can both trust.</div>' +
+    (tab === 'signup'
+      ? '<div style="font-size:42px;font-weight:500;line-height:1.22;max-width:480px">Your profile, your discipline, your roster spot.</div>' +
+        '<div style="font-size:15px;color:var(--paper-secondary);margin-top:18px;max-width:420px;line-height:1.65">A couple of minutes to set up — then your coach can see your attendance, fees, and scores in one place.</div>'
+      : '<div style="font-size:42px;font-weight:500;line-height:1.22;max-width:480px">Every session, every rupee, every shooter — one ledger.</div>' +
+        '<div style="font-size:15px;color:var(--paper-secondary);margin-top:18px;max-width:420px;line-height:1.65">Attendance, scores, fees, and gear for your academy, kept in one place your shooters and coaches can both trust.</div>') +
     '</div>' +
     '</div>';
 }
@@ -2900,15 +3025,33 @@ function switchTab(tabKey) {
 // Desktop sidebar — shares the exact same nav tab list each dashboard
 // already builds for its mobile bottom bar, so the two can never drift
 // out of sync with each other.
+// Clicking a day opens the same full calendar popover the topbar's icon
+// does (pre-focused on that date), instead of this mini grid being a static
+// picture of the month with nothing behind it.
+function sidebarSelectDate(iso) {
+  state.selectedReminderDate = iso;
+  state.calendarOpen = true;
+  state.addReminderOpen = true;
+  render();
+}
 function sidebarMiniCalendar() {
   const year = state.calendarViewDate.year, month = state.calendarViewDate.month;
   const firstDay = new Date(year, month, 1); const startWeekday = firstDay.getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayIso = localIsoDate();
   const eventDays = new Set((state.cache.reminders || []).map((r) => { const d = new Date(r.date + 'T00:00:00'); return (d.getFullYear() === year && d.getMonth() === month) ? d.getDate() : null; }).filter(Boolean));
   let cells = '';
   for (let i = 0; i < startWeekday; i++) cells += '<div class="sidebar-mini-cal-cell empty">·</div>';
-  for (let day = 1; day <= daysInMonth; day++) cells += '<div class="sidebar-mini-cal-cell' + (eventDays.has(day) ? ' has-event' : '') + '">' + day + '</div>';
-  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="eyebrow" style="font-size:11px">' + firstDay.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) + '</span>' + (eventDays.size ? '<span class="mono-sm" style="font-size:10px">' + eventDays.size + ' match' + (eventDays.size === 1 ? '' : 'es') + '</span>' : '') + '</div>' +
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    cells += '<div class="sidebar-mini-cal-cell' + (eventDays.has(day) ? ' has-event' : '') + (iso === todayIso ? ' today' : '') + '" title="' + (eventDays.has(day) ? 'Has a match — click for details' : 'Click to add a reminder') + '" onclick="sidebarSelectDate(\'' + iso + '\')">' + day + '</div>';
+  }
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+    '<button class="sidebar-mini-cal-nav" aria-label="Previous month" onclick="shiftCalendarMonth(-1)">' + icon('chevronLeft', 13) + '</button>' +
+    '<span class="eyebrow" style="font-size:11px">' + firstDay.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) + '</span>' +
+    '<button class="sidebar-mini-cal-nav" aria-label="Next month" onclick="shiftCalendarMonth(1)">' + icon('chevronRight', 13) + '</button>' +
+    '</div>' +
+    (eventDays.size ? '<div style="text-align:center;margin-bottom:6px"><span class="mono-sm" style="font-size:10px">' + eventDays.size + ' match' + (eventDays.size === 1 ? '' : 'es') + ' this month</span></div>' : '') +
     '<div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:9px;color:var(--paper-faint);margin-bottom:4px;font-family:\'IBM Plex Mono\',monospace">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => '<div>' + d + '</div>').join('') + '</div>' +
     '<div class="sidebar-mini-cal">' + cells + '</div>';
 }
@@ -2944,14 +3087,16 @@ function toggleAccountMenu() {
     sb.auth.mfa.listFactors().then(({ data }) => { state.cache.mfaFactors = (data && data.totp) || []; render(); }).catch(() => {});
   }
 }
-function toggleAccountForm(which) { state.accountForm = state.accountForm === which ? null : which; render(); }
+// Opens a dedicated full-screen modal instead of expanding inline within the
+// account popover — the same crowding problem 2FA setup had, and the same
+// fix (see mfaEnrollmentModal above).
+function toggleAccountForm(which) { state.accountForm = which; state.accountMenuOpen = false; render(); }
+function closeAccountForm() { state.accountForm = null; render(); }
 function accountMenuPopover() {
   if (!state.accountMenuOpen) return '';
   return '<div class="popover" style="width:230px"><div class="popover-head"><span class="eyebrow">👤 Account</span><button class="icon-btn small" aria-label="Close menu" onclick="toggleAccountMenu()">' + icon('x', 14) + '</button></div>' +
     '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="toggleAccountForm(\'email\')">Change email</button>' +
-    (state.accountForm === 'email' ? accountEmailForm() : '') +
     '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="toggleAccountForm(\'password\')">Change password</button>' +
-    (state.accountForm === 'password' ? accountPasswordForm() : '') +
     '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="togglePrivacyNotice()">Privacy &amp; data notice</button>' +
     (() => {
       const factors = state.cache.mfaFactors || [];
@@ -2963,23 +3108,31 @@ function accountMenuPopover() {
     '<button class="chip" style="width:100%;text-align:left" onclick="startNewAccount()">+ Create a new account</button>' +
     '</div>';
 }
-function accountEmailForm() {
-  return '<div style="margin:2px 0 10px;padding:8px;background:var(--line-soft);border-radius:6px">' +
+function accountEmailModal() {
+  if (state.accountForm !== 'email') return '';
+  return '<div class="modal-overlay" onclick="if(event.target===this) closeAccountForm()"><div class="modal-card" style="max-width:360px">' +
+    '<div class="detail-name" style="margin-bottom:14px">Change email</div>' +
     '<label class="field-label" style="margin-top:0">Current email</label>' +
-    '<input id="oldEmailInput" class="text-input" type="email" placeholder="your current email" style="margin-bottom:8px"/>' +
+    '<input id="oldEmailInput" class="text-input" type="email" placeholder="your current email" style="margin-bottom:10px"/>' +
     '<label class="field-label">New email</label>' +
-    '<input id="newEmailInput" class="text-input" type="email" placeholder="new@example.com" style="margin-bottom:8px"/>' +
+    '<input id="newEmailInput" class="text-input" type="email" placeholder="new@example.com" style="margin-bottom:10px"/>' +
     '<button class="btn-brass" onclick="submitEmailChange()">Update email</button>' +
-    '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:6px;line-height:1.4">You may need to confirm this from your inbox, depending on your project\'s email settings.</div></div>';
+    '<button class="chip" style="width:100%;justify-content:center;margin-top:8px" onclick="closeAccountForm()">Cancel</button>' +
+    '<div style="font-size:10.5px;color:var(--paper-dim);margin-top:10px;line-height:1.4">You may need to confirm this from your inbox, depending on your project\'s email settings.</div>' +
+    '</div></div>';
 }
-function accountPasswordForm() {
-  return '<div style="margin:2px 0 10px;padding:8px;background:var(--line-soft);border-radius:6px">' +
+function accountPasswordModal() {
+  if (state.accountForm !== 'password') return '';
+  return '<div class="modal-overlay" onclick="if(event.target===this) closeAccountForm()"><div class="modal-card" style="max-width:360px">' +
+    '<div class="detail-name" style="margin-bottom:14px">Change password</div>' +
     '<label class="field-label" style="margin-top:0">Current password</label>' +
-    '<input id="oldPasswordInput" class="text-input" type="password" placeholder="Your current password" style="margin-bottom:8px"/>' +
+    '<input id="oldPasswordInput" class="text-input" type="password" placeholder="Your current password" style="margin-bottom:10px"/>' +
     '<label class="field-label">New password</label>' +
     '<input id="newPasswordInput" class="text-input" type="password" placeholder="At least 6 characters" oninput="updatePasswordStrengthUI(this.value, \'changePasswordStrength\')" style="margin-bottom:4px"/>' +
-    '<div id="changePasswordStrength" style="margin-bottom:6px"></div>' +
-    '<button class="btn-brass" onclick="submitPasswordChange()">Update password</button></div>';
+    '<div id="changePasswordStrength" style="margin-bottom:10px"></div>' +
+    '<button class="btn-brass" onclick="submitPasswordChange()">Update password</button>' +
+    '<button class="chip" style="width:100%;justify-content:center;margin-top:8px" onclick="closeAccountForm()">Cancel</button>' +
+    '</div></div>';
 }
 async function submitEmailChange() {
   const oldEmail = document.getElementById('oldEmailInput').value.trim();
@@ -3219,7 +3372,7 @@ function screenStudentDashboard() {
     '<div class="app-main">' +
     '<div class="app-topbar"><div style="display:flex;align-items:center;gap:8px">' + avatar(student, 36) +
     '<div><div style="font-weight:600;font-size:13px">' + escapeAttr(student.name) + '</div><div style="font-size:11.5px;color:var(--paper-dim)">' + student.category + ((state.cache.myCoach && state.cache.myCoach.name) || student.coach_name ? ' · Coach: ' + escapeAttr((state.cache.myCoach && state.cache.myCoach.name) || student.coach_name) : '') + ((student.academy_name || (state.cache.myCoach && state.cache.myCoach.academy_name)) ? ' · ' + escapeAttr(student.academy_name || state.cache.myCoach.academy_name) : '') + '</div></div>' + syncStatusBadge() + '</div>' +
-    '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + calendarPopover(student.shooter_category) + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
+    '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
     renderMainTopbar(pageTitles[active][0], pageTitles[active][1]) +
     '<div class="screen-pad has-tabbar">' + loadErrorBanner() + '<div class="dashboard-grid">' + tabContent + '</div></div>' +
     renderTabBar(navTabs) +
@@ -3342,7 +3495,7 @@ function screenCoachDashboard() {
     '<div class="app-main">' +
     '<div class="app-topbar"><div style="display:flex;align-items:center;gap:8px"><div class="avatar-fallback" style="width:36px;height:36px">' + icon('target', 16) + '</div>' +
     '<div><div style="font-weight:600;font-size:13px">' + (isAcademyOwner() ? 'Coach ' + escapeAttr(state.me.name) : escapeAttr(state.myStaffName || '') + ' · ' + escapeAttr(state.me.academy_name || state.me.name)) + '</div><div style="font-size:11.5px;color:var(--paper-dim)">' + (isAcademyOwner() ? escapeAttr(state.me.specialization || '') : (state.myStaffRole ? state.myStaffRole.charAt(0).toUpperCase() + state.myStaffRole.slice(1) : '')) + '</div></div>' + syncStatusBadge() + '</div>' +
-    '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + calendarPopover() + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
+    '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
     renderMainTopbar(pageTitles[active][0], pageTitles[active][1]) +
     '<div class="screen-pad has-tabbar"><div class="dashboard-grid">' + tabContent + '</div></div>' +
     renderTabBar(navTabs, { icon: icon('check', 20, '#fff'), action: "switchTab('home')", caption: 'Approve' }) +
@@ -3451,7 +3604,7 @@ function screenAdminDashboard() {
     '<div class="app-main">' +
     '<div class="app-topbar"><div style="display:flex;align-items:center;gap:8px">' + icon('crosshair', 22, 'var(--brass)') +
     '<div><div style="font-weight:600;font-size:13px">Admin</div><div style="font-size:11.5px;color:var(--paper-dim)">Full academy overview</div></div></div>' +
-    '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + calendarPopover() + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
+    '<div style="display:flex;align-items:center;gap:6px"><div style="position:relative">' + calendarButton() + '</div><div style="position:relative">' + accountMenuButton() + accountMenuPopover() + '</div>' + logoutButton() + '</div></div>' +
     renderMainTopbar(pageTitles[active][0], pageTitles[active][1]) +
     '<div class="screen-pad has-tabbar">' + loadErrorBanner() + (active === 'home' ? '<div class="stat-row-2">' +
     '<div class="statcard"><div class="statcard-icon">' + icon('user', 15) + '</div><div><div class="statcard-value">' + students.length + '</div><div class="eyebrow">Shooters</div></div></div>' +
@@ -3483,7 +3636,7 @@ function App() {
     case 'ADMIN_DASHBOARD': screenHtml = screenAdminDashboard(); break;
     default: screenHtml = screenAuth();
   }
-  return toastBanner() + confirmDialogModal() + privacyNoticeModal() + allSessionsModal() + mfaEnrollmentModal() + screenHtml;
+  return toastBanner() + confirmDialogModal() + privacyNoticeModal() + allSessionsModal() + mfaEnrollmentModal() + accountEmailModal() + accountPasswordModal() + calendarModal() + screenHtml;
 }
 
 if ('serviceWorker' in navigator) {
