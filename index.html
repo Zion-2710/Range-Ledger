@@ -627,6 +627,24 @@ function resetTurnstile() {
   state.captchaToken = null;
   if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
 }
+// Turnstile tokens are single-use — a token already spent on signInWithPassword
+// can't be reused for a second, distinct auth call (signInWithOtp) right
+// after. This resets the widget and waits (usually near-instant: a widget a
+// trusted browser already solved once typically auto-resolves silently the
+// second time) for a fresh token before that second call.
+function waitForFreshCaptchaToken(timeoutMs) {
+  resetTurnstile();
+  render();
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const check = () => {
+      if (state.captchaToken) { resolve(state.captchaToken); return; }
+      if (Date.now() - start > timeoutMs) { resolve(null); return; }
+      setTimeout(check, 200);
+    };
+    check();
+  });
+}
 
 // =============================================================================
 // Offline support — scoped to attendance logging, as that's the one action
@@ -959,6 +977,75 @@ function mfaEnrollmentModal() {
     '<input id="mfaEnrollCode" class="text-input" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center;letter-spacing:0.3em;font-size:18px;margin-bottom:12px" onkeydown="submitOnEnter(event, submitMfaEnrollmentVerify)"/>' +
     '<button class="btn-brass" onclick="submitMfaEnrollmentVerify()">Verify &amp; turn on</button>' +
     '<button class="chip" style="width:100%;justify-content:center;margin-top:8px" onclick="cancelMfaEnrollment()">Cancel</button>' +
+    '</div></div>';
+}
+
+// =============================================================================
+// Email-code 2FA — a second, simpler option alongside the authenticator-app
+// (TOTP) flow above: no app to install, no QR code, just a code emailed to
+// you. Built entirely on Supabase's own auth mailer, not a custom send-email
+// Edge Function, so it doesn't need a custom domain.
+//
+// Two REAL setup steps this code cannot do for you:
+// 1. A custom SMTP provider must be connected in Supabase Dashboard →
+//    Project Settings → Auth → SMTP Settings. Supabase's own default mailer
+//    can only deliver to email addresses that are members of your Supabase
+//    organization — every other address (i.e. every real student/coach)
+//    will silently fail to receive anything until this is set up. Providers
+//    like Resend, Brevo, or SendGrid work and don't require owning a domain
+//    (a single verified "from" address is enough).
+// 2. For the SIGN-IN check specifically (screenEmailOtpChallenge below),
+//    Supabase's "Magic Link" email template needs {{ .Token }} added so it
+//    contains a typed code, not just a click link — Dashboard → Auth →
+//    Email Templates → Magic Link. The *enrollment* flow doesn't need this:
+//    it uses reauthenticate(), whose "Reauthentication" template already
+//    includes {{ .Token }} by default.
+//
+// Enrollment uses reauthenticate() rather than signInWithOtp() deliberately:
+// unlike signInWithOtp, it isn't one of the flows Supabase's project-wide
+// CAPTCHA protection gates, and it's the API actually meant for "confirm the
+// already-signed-in user's identity again" rather than a fresh sign-in.
+// =============================================================================
+async function startEmailOtpEnrollment() {
+  if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
+  const { error } = await sb.auth.reauthenticate();
+  if (error) { showToast('Could not send a code: ' + error.message); return; }
+  state.accountForm = 'email-otp-enroll';
+  state.accountMenuOpen = false;
+  render();
+  showToast('Code sent — check your inbox.', 'success');
+}
+async function submitEmailOtpEnrollmentVerify() {
+  const code = document.getElementById('emailOtpEnrollCode').value.trim();
+  if (!code) { showToast('Please enter the code from your email.'); return; }
+  const { data, error } = await sb.auth.verifyOtp({ token: code, type: 'reauthentication' });
+  if (error) { showToast('That code didn\'t match: ' + error.message); return; }
+  if (data && data.session) state.session = data.session; // verifyOtp refreshes the session
+  const { error: updateErr } = await sb.from('profiles').update({ email_2fa_enabled: true }).eq('id', state.profile.id);
+  if (updateErr) { showToast('Code verified, but could not save the setting: ' + updateErr.message); return; }
+  state.profile.email_2fa_enabled = true;
+  state.accountForm = null;
+  showToast('Email code sign-in is now on for this account.', 'success');
+  render();
+}
+function cancelEmailOtpEnrollment() { state.accountForm = null; render(); }
+async function disableEmailOtp2fa() {
+  if (!sb) { showToast('Not connected — please try again once you\'re back online.'); return; }
+  const { error } = await sb.from('profiles').update({ email_2fa_enabled: false }).eq('id', state.profile.id);
+  if (error) { showToast('Could not turn it off: ' + error.message); return; }
+  state.profile.email_2fa_enabled = false;
+  showToast('Email code sign-in turned off.', 'success');
+  render();
+}
+function emailOtpEnrollmentModal() {
+  if (state.accountForm !== 'email-otp-enroll') return '';
+  return '<div class="modal-overlay" onclick="if(event.target===this) cancelEmailOtpEnrollment()"><div class="modal-card" style="max-width:360px;text-align:center">' +
+    '<div class="detail-name" style="margin-bottom:4px">Set up email code sign-in</div>' +
+    '<div style="font-size:12.5px;color:var(--paper-dim);margin-bottom:18px">We just emailed a 6-digit code to your address. Enter it below to turn this on.</div>' +
+    '<label class="field-label" style="margin-top:0">6-digit code from your email</label>' +
+    '<input id="emailOtpEnrollCode" class="text-input" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center;letter-spacing:0.3em;font-size:18px;margin-bottom:12px" onkeydown="submitOnEnter(event, submitEmailOtpEnrollmentVerify)"/>' +
+    '<button class="btn-brass" onclick="submitEmailOtpEnrollmentVerify()">Verify &amp; turn on</button>' +
+    '<button class="chip" style="width:100%;justify-content:center;margin-top:8px" onclick="cancelEmailOtpEnrollment()">Cancel</button>' +
     '</div></div>';
 }
 function screenStaffPending() {
@@ -1474,7 +1561,53 @@ async function submitSignIn() {
   await fetchProfile();
   if (state.signinForm.remember !== false) saveCredentialToPasswordManager(email, password, state.profile && state.profile.name);
   setBusy(false);
+  // The email-code check lives here (once, right after a fresh password
+  // sign-in) rather than inside routeAfterAuth() — that function also runs
+  // on every plain page refresh (boot() restoring an existing session), and
+  // this shouldn't re-prompt on every reload, only at an actual new sign-in.
+  // TOTP doesn't need this same treatment: Supabase tracks its aal2 status
+  // on the session/JWT itself, so a refresh already remembers it correctly.
+  if (state.profile && state.profile.email_2fa_enabled) {
+    let freshToken;
+    if (TURNSTILE_SITE_KEY) {
+      showToast('One more quick check before we email your code…', 'info');
+      freshToken = await waitForFreshCaptchaToken(10000);
+      if (!freshToken) { showToast('Could not verify — please try signing in again.'); return; }
+    }
+    const { error: otpErr } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false, captchaToken: freshToken || undefined } });
+    if (otpErr) { showToast('Could not send your email code: ' + otpErr.message); return; }
+    state.screen = 'EMAIL_OTP_CHALLENGE';
+    render();
+    return;
+  }
   await routeAfterAuth();
+}
+async function submitEmailOtpChallenge() {
+  const code = document.getElementById('emailOtpChallengeCode').value.trim();
+  const email = state.signinForm.email.trim();
+  if (!code || code.length < 6) { showToast('Please enter the 6-digit code from your email.'); return; }
+  setBusy(true); render();
+  const { data, error } = await sb.auth.verifyOtp({ email, token: code, type: 'email' });
+  if (error) {
+    setBusy(false); render();
+    showToast('That code didn\'t work: ' + error.message);
+    return;
+  }
+  if (data && data.session) state.session = data.session;
+  setBusy(false);
+  await routeAfterAuth();
+}
+function screenEmailOtpChallenge() {
+  return '<div class="splash target-watermark" style="text-align:center"><div class="brand-center">' +
+    '<span class="brand-icon-ring">' + icon('crosshair', 40, 'var(--brass)') + '</span>' +
+    '<div class="brand-title" style="font-size:22px;margin-top:10px">Range Ledger</div></div>' +
+    '<div class="auth-card">' +
+    '<div class="eyebrow" style="margin-bottom:6px">Check your email</div>' +
+    '<div style="font-size:12.5px;color:var(--paper-dim);margin-bottom:14px">We sent a 6-digit code to ' + escapeAttr(state.signinForm.email.trim()) + '. Enter it below.</div>' +
+    '<input id="emailOtpChallengeCode" class="text-input" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center;letter-spacing:0.3em;font-size:20px" onkeydown="submitOnEnter(event, submitEmailOtpChallenge)"/>' +
+    '<button class="btn-brass" style="margin-top:14px" onclick="submitEmailOtpChallenge()" ' + (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Verifying…' : 'Verify') + '</button>' +
+    '<button class="chip" style="width:100%;justify-content:center;margin-top:8px" onclick="logout()">Sign out instead</button>' +
+    '</div></div>';
 }
 async function logout() {
   teardownRealtime();
@@ -3181,6 +3314,12 @@ function accountMenuPopover() {
       }
       return '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="startMfaEnrollment()">🛡️ Set up two-factor authentication</button>';
     })() +
+    // A second, separate 2FA option — email code instead of an authenticator
+    // app. Its own row here, its own modal below (never shown alongside the
+    // QR modal), so it never crowds the TOTP flow.
+    (state.profile && state.profile.email_2fa_enabled
+      ? '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="askConfirm(\'Turn off email code sign-in?\', \'disableEmailOtp2fa\', [])">📧 Turn off email code sign-in</button>'
+      : '<button class="chip" style="width:100%;text-align:left;margin-bottom:6px" onclick="startEmailOtpEnrollment()">📧 Set up email code sign-in</button>') +
     '<button class="chip" style="width:100%;text-align:left" onclick="startNewAccount()">+ Create a new account</button>' +
     '</div>';
 }
@@ -3706,13 +3845,14 @@ function App() {
     case 'LOADING': screenHtml = screenLoading(); break;
     case 'STAFF_PENDING': screenHtml = screenStaffPending(); break;
     case 'MFA_CHALLENGE': screenHtml = screenMfaChallenge(); break;
+    case 'EMAIL_OTP_CHALLENGE': screenHtml = screenEmailOtpChallenge(); break;
     case 'AUTH': screenHtml = screenAuth(); break;
     case 'STUDENT_DASHBOARD': screenHtml = screenStudentDashboard(); break;
     case 'COACH_DASHBOARD': screenHtml = screenCoachDashboard(); break;
     case 'ADMIN_DASHBOARD': screenHtml = screenAdminDashboard(); break;
     default: screenHtml = screenAuth();
   }
-  return toastBanner() + confirmDialogModal() + privacyNoticeModal() + allSessionsModal() + mfaEnrollmentModal() + accountEmailModal() + accountPasswordModal() + calendarModal() + screenHtml;
+  return toastBanner() + confirmDialogModal() + privacyNoticeModal() + allSessionsModal() + mfaEnrollmentModal() + emailOtpEnrollmentModal() + accountEmailModal() + accountPasswordModal() + calendarModal() + screenHtml;
 }
 
 if ('serviceWorker' in navigator) {
