@@ -968,7 +968,11 @@ function mfaEnrollmentModal() {
     '<div class="detail-name" style="margin-bottom:4px">Set up two-factor authentication</div>' +
     '<div style="font-size:12.5px;color:var(--paper-dim);margin-bottom:18px">Scan this with your authenticator app — Google Authenticator, Authy, or similar.</div>' +
     '<div class="mfa-qr-wrap">' + mfaQrHtml(state.mfaEnrollment.qrCode) + '<div class="mfa-qr-badge"><span class="mfa-qr-digit">1</span><span class="mfa-qr-digit">0</span><span class="mfa-qr-digit">.</span><span class="mfa-qr-digit">9</span></div></div>' +
-    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:8px">Camera not working, or scanning a QR code on the same screen you\'re reading this on? Open your authenticator app, tap "enter a setup key" (or similar), and type this key in there instead:</div>' +
+    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:10px">Don\'t have an authenticator app yet? Get Google Authenticator, free:<br/>' +
+      '<a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_blank" rel="noopener" style="color:var(--accent-light);text-decoration:underline">Download for Android (Play Store)</a> · ' +
+      '<a href="https://apps.apple.com/app/google-authenticator/id388497605" target="_blank" rel="noopener" style="color:var(--accent-light);text-decoration:underline">Download for iPhone (App Store)</a>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--paper-dim);margin-bottom:8px">Already have the app but can\'t scan? Open it, tap "enter a setup key" (or similar), and type this key in there instead:</div>' +
     '<div style="display:flex;align-items:center;gap:8px;background:var(--line-soft);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:18px">' +
       '<span class="mono-sm" style="font-size:13px;letter-spacing:0.05em;flex:1;text-align:left;word-break:break-all">' + escapeAttr(chunkSecret(state.mfaEnrollment.secret)) + '</span>' +
       '<button type="button" class="icon-btn small" title="Copy code" aria-label="Copy code" onclick="copyMfaSecret()">' + icon('copy', 13) + '</button>' +
@@ -1018,7 +1022,8 @@ async function startEmailOtpEnrollment() {
 async function submitEmailOtpEnrollmentVerify() {
   const code = document.getElementById('emailOtpEnrollCode').value.trim();
   if (!code) { showToast('Please enter the code from your email.'); return; }
-  const { data, error } = await sb.auth.verifyOtp({ token: code, type: 'reauthentication' });
+  const currentEmail = (state.session && state.session.user && state.session.user.email) || '';
+  const { data, error } = await sb.auth.verifyOtp({ email: currentEmail, token: code, type: 'reauthentication' });
   if (error) { showToast('That code didn\'t match: ' + error.message); return; }
   if (data && data.session) state.session = data.session; // verifyOtp refreshes the session
   const { error: updateErr } = await sb.from('profiles').update({ email_2fa_enabled: true }).eq('id', state.profile.id);
@@ -3031,13 +3036,21 @@ function screenSignIn() {
 }
 function signInMainView() {
   const f = state.signinForm;
+  // A real <form> with a submit event — not just onclick — is what makes
+  // browsers reliably offer "Save password?". Chrome/Safari/Firefox key
+  // their save-password heuristics off an actual form submission (even in
+  // an SPA where preventDefault() stops the page from navigating), not
+  // plain button clicks or oninput handlers, which is why this wasn't
+  // showing up before.
   return '<div class="oauth-row" style="margin-bottom:14px"><button type="button" class="chip" style="padding:10px" onclick="signInWithGoogle()">Continue with Google</button></div>' +
     '<div style="display:flex;align-items:center;gap:10px;margin:0 0 14px"><div style="flex:1;height:1px;background:var(--line)"></div><span style="font-size:11px;color:var(--paper-dim)">OR</span><div style="flex:1;height:1px;background:var(--line)"></div></div>' +
-    '<label class="field-label" style="margin-top:0">Email</label><input id="siEmail" class="text-input" type="email" autocomplete="email" placeholder="you@example.com" value="' + escapeAttr(f.email) + '" oninput="updateSigninField(\'email\', this.value)" onkeydown="submitOnEnter(event, submitSignIn)"/>' +
-    '<label class="field-label">Password</label><div class="password-wrap"><input id="siPassword" class="text-input" type="password" autocomplete="current-password" placeholder="••••••••" value="' + escapeAttr(f.password) + '" oninput="updateSigninField(\'password\', this.value)" onkeydown="submitOnEnter(event, submitSignIn)"/>' +
+    '<form id="signInForm" onsubmit="event.preventDefault(); submitSignIn(); return false;">' +
+    '<label class="field-label" style="margin-top:0">Email</label><input id="siEmail" class="text-input" type="email" autocomplete="email" placeholder="you@example.com" value="' + escapeAttr(f.email) + '" oninput="updateSigninField(\'email\', this.value)"/>' +
+    '<label class="field-label">Password</label><div class="password-wrap"><input id="siPassword" class="text-input" type="password" autocomplete="current-password" placeholder="••••••••" value="' + escapeAttr(f.password) + '" oninput="updateSigninField(\'password\', this.value)"/>' +
     '<button type="button" id="siPasswordToggle" class="password-toggle-btn" onclick="togglePasswordVisibility(\'siPassword\',\'siPasswordToggle\')">' + icon('eye', 15) + '</button></div>' +
     '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--paper-dim);cursor:pointer"><input type="checkbox" id="siRemember" ' + (f.remember !== false ? 'checked' : '') + ' onchange="state.signinForm.remember=this.checked" style="width:15px;height:15px;accent-color:var(--brass)"/> Save email and login method on this device</label>' +
-    '<button class="btn-brass" style="margin-top:14px" onclick="submitSignIn()" ' + (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Signing in…' : 'Sign in') + '</button>' +
+    '<button type="submit" class="btn-brass" style="margin-top:14px" ' + (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Signing in…' : 'Sign in') + '</button>' +
+    '</form>' +
     (hasAlternateSignInOptions() ? '<div style="text-align:center;margin-top:10px"><a href="#" onclick="state.signinView=\'more\';render();return false" style="font-size:11.5px;color:var(--paper-dim);text-decoration:underline">More ways to sign in</a></div>' : '');
 }
 function hasAlternateSignInOptions() {
